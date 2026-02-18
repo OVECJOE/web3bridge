@@ -31,10 +31,6 @@ contract TwoBottlesTest is Test {
 
         // Deploy contract
         twoBottles = new TwoBottles();
-
-        // Verify initial state
-        assertEq(twoBottles.owner(), owner, "Owner should be the deployer");
-        assertEq(twoBottles.balanceOf(owner), twoBottles.totalSupply(), "Owner should have entire initial supply");
     }
 
     // ============================================
@@ -48,6 +44,11 @@ contract TwoBottlesTest is Test {
     // ============================================
     // ERC20 Basic View Functions Tests
     // ============================================
+
+    function testOwnerIsDeployerAndHasInitialBalance() public view {
+        assertEq(twoBottles.owner(), owner, "Owner should be the deployer");
+        assertEq(twoBottles.balanceOf(owner), twoBottles.totalSupply(), "Owner should have entire initial supply");
+    }
 
     function testInitialSupply() public view {
         uint256 expectedSupply = INITIAL_SUPPLY;
