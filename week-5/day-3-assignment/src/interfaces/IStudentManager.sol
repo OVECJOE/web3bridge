@@ -25,7 +25,7 @@ interface IStudentManager {
         LibSMS.StudentLevel _level,
         string memory _department,
         string memory _email
-    ) external;
+    ) external returns (uint256);
     function updateStudent(
         uint256 _studentId,
         string memory _name,

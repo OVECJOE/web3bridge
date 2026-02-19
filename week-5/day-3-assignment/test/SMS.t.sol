@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
+import {LibSMS} from "../src/libraries/LibSMS.sol";
 import {SMS} from "../src/SMS.sol";
 
 contract SMSTest is Test {
@@ -31,5 +32,18 @@ contract SMSTest is Test {
 
         // Add token to SMS
         sms.addSupportedToken(address(token), token.symbol(), token.decimals());
+    }
+
+    function testAddStudent() public {
+        uint256 studentId = sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com"
+        );
+        LibSMS.Student memory student = sms.getStudentDetails(studentId);
+        assertEq(student.name, "Levi Harrison");
+        assertTrue(student.level == LibSMS.StudentLevel.LEVEL_100);
+        assertEq(student.department, "Computer Science");
     }
 }

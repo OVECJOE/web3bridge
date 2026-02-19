@@ -238,7 +238,7 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         LibSMS.StudentLevel _level,
         string memory _department,
         string memory _email
-    ) external override onlyOwner {
+    ) external override onlyOwner returns (uint256) {
         require(bytes(_name).length > 0, "SMS: name cannot be empty");
         require(bytes(_department).length > 0, "SMS: department cannot be empty");
         require(bytes(_email).length > 0, "SMS: email cannot be empty");
@@ -270,6 +270,7 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
             isUsed: false
         });
         emit PaymentCodeGenerated(studentId, paymentCode);
+        return studentId;
     }
 
     function updateStudent(
