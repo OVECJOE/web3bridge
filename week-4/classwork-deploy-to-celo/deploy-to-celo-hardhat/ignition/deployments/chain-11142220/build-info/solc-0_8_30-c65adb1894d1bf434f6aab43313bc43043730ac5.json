@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_30-c65adb1894d1bf434f6aab43313bc43043730ac5",
+  "solcVersion": "0.8.30",
+  "solcLongVersion": "0.8.30+commit.73712a01",
+  "userSourceNameMap": {
+    "contracts/Greeter.sol": "project/contracts/Greeter.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "prague",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Greeter.sol": {
+        "content": "// SPDX-License-Identifier: Unlicensed\npragma solidity ^0.8.30;\n\ncontract Greeter {\n    string public text;\n\n    function setMessage(string memory _text) public {\n        text = _text;\n    }\n\n    function getMessage() public view returns(string memory) {\n        return text;\n    }\n}\n"
+      }
+    }
+  }
+}
