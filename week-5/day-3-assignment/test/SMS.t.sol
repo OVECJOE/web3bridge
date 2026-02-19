@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console} from "forge-std/Test.sol";
+import {Test, console, Vm} from "forge-std/Test.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {LibSMS} from "../src/libraries/LibSMS.sol";
 import {SMS} from "../src/SMS.sol";
@@ -15,7 +15,7 @@ contract SMSTest is Test {
     address bob; // staff
 
     event StudentAdded(
-        uint256 indexed studentId,
+        bytes32 indexed studentId,
         string name,
         LibSMS.StudentLevel level,
         string department
@@ -41,12 +41,13 @@ contract SMSTest is Test {
         sms.addSupportedToken(address(token), token.symbol(), token.decimals());
     }
 
-    function testAddStudent() public {
-        uint256 studentId = sms.addStudent(
+    function testAddStudentWorks() public {
+        (bytes32 studentId,) = sms.addStudent(
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
             "Computer Science",
-            "levi.harrison@example.com"
+            "levi.harrison@example.com",
+            500e18
         );
         LibSMS.Student memory student = sms.getStudentDetails(studentId);
         assertEq(student.name, "Levi Harrison");
@@ -54,10 +55,10 @@ contract SMSTest is Test {
         assertEq(student.department, "Computer Science");
     }
 
-    function testAddStudentEmitsExpectedEvents() public {
+    function testAddStudentEmitsStudentAddedEvent() public {
         vm.expectEmit(false, false, false, false);
         emit StudentAdded(
-            0,
+            0x0,
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
             "Computer Science"
@@ -67,7 +68,23 @@ contract SMSTest is Test {
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
             "Computer Science",
-            "levi.harrison@example.com"
+            "levi.harrison@example.com",
+            500e18
         );
+    }
+
+    function testMakePayment() public {
+        (bytes32 studentId, uint16 paymentCode) = sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com",
+            500e18
+        );
+        
+        
+        vm.prank(alice);
+        bool success = sms.makePayment(studentId, paymentCode, 500e18, address(token));
+        assertTrue(success);
     }
 }

@@ -5,37 +5,47 @@ import {LibSMS} from "../libraries/LibSMS.sol";
 
 interface IStudentManager {
     event StudentAdded(
-        uint256 indexed studentId,
+        bytes32 indexed studentId,
         string name,
         LibSMS.StudentLevel level,
         string department
     );
     event StudentDetailsUpdated(
-        uint256 indexed studentId,
+        bytes32 indexed studentId,
         string name,
         LibSMS.StudentLevel level,
         string department
     );
-    event StudentRemoved(uint256 indexed studentId);
-    event StudentPaymentStatusUpdated(uint256 indexed studentId, LibSMS.PaymentStatus paymentStatus, uint40 paidAt);
-    event PaymentCodeGenerated(uint256 indexed studentId, uint16 paymentCode);
+    event StudentRemoved(bytes32 indexed studentId);
+    event StudentPaymentStatusUpdated(
+        bytes32 indexed studentId,
+        LibSMS.PaymentStatus paymentStatus,
+        uint40 paidAt
+    );
 
     function addStudent(
         string memory _name,
         LibSMS.StudentLevel _level,
         string memory _department,
-        string memory _email
-    ) external returns (uint256);
+        string memory _email,
+        uint256 _fee
+    ) external returns (bytes32, uint16);
     function updateStudent(
-        uint256 _studentId,
+        bytes32 _studentId,
         string memory _name,
         LibSMS.StudentLevel _level,
         string memory _department,
-        string memory _email
+        string memory _email,
+        uint256 _fee
     ) external;
-    function removeStudent(uint256 _studentId) external;
-    function makePayment(uint256 _studentId, uint16 _code, uint256 _amount, address _tokenAddress) external returns (bool);
+    function removeStudent(bytes32 _studentId) external;
+    function makePayment(
+        bytes32 _studentId,
+        uint16 _code,
+        uint256 _amount,
+        address _tokenAddress
+    ) external returns (bool);
     function getStudentDetails(
-        uint256 _studentId
+        bytes32 _studentId
     ) external view returns (LibSMS.Student memory);
 }

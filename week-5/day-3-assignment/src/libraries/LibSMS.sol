@@ -26,11 +26,12 @@ library LibSMS {
     }
 
     struct Student {
-        uint256 id;
+        bytes32 id;
         string name;
         StudentLevel level;
         string department;
         string email;
+        uint256 fee;
         PaymentStatus paymentStatus;
         bool isActive;
         uint40 paidAt;
@@ -40,7 +41,7 @@ library LibSMS {
 
     struct StudentPaymentCode {
         uint16 code;
-        uint256 studentId;
+        bytes32 studentId;
         uint40 generatedAt;
         bool isUsed;
     }
@@ -66,5 +67,13 @@ library LibSMS {
         uint40 paidAt;
         uint40 createdAt;
         uint40 modifiedAt;
+    }
+
+    function getStudentLevelId(StudentLevel level) internal pure returns (uint16) {
+        if (level == StudentLevel.LEVEL_100) return 100;
+        if (level == StudentLevel.LEVEL_200) return 200;
+        if (level == StudentLevel.LEVEL_300) return 300;
+        if (level == StudentLevel.LEVEL_400) return 400;
+        return 0; // Invalid level
     }
 }

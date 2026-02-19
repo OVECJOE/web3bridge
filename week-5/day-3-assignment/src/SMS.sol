@@ -24,9 +24,9 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
     address private _owner;
     uint256 private _status;
     LibSMS.SupportedToken[] private _supportedTokens;
-    mapping(uint256 => LibSMS.Student) private _students;
+    mapping(bytes32 => LibSMS.Student) private _students;
     mapping(address => LibSMS.Staff) private _staff;
-    mapping(uint256 => LibSMS.StudentPaymentCode) private _paymentCodes;
+    mapping(bytes32 => LibSMS.StudentPaymentCode) private _paymentCodes;
 
     error TokenNotFound(address tokenAddress);
 
@@ -136,10 +136,7 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
             _staffAddress != address(0),
             "SMS: staff address cannot be zero"
         );
-        require(
-            !_staff[_staffAddress].isActive,
-            "SMS: staff already exists"
-        );
+        require(!_staff[_staffAddress].isActive, "SMS: staff already exists");
         require(
             isTokenSupported(_salaryToken),
             "SMS: salary token not supported"
@@ -203,7 +200,9 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         return (staff.name, staff.position, staff.salary, staff.salaryToken);
     }
 
-    function paySalary(address _staffAddress) external override onlyOwner nonReentrant returns (bool) {
+    function paySalary(
+        address _staffAddress
+    ) external override onlyOwner nonReentrant returns (bool) {
         require(_staff[_staffAddress].isActive, "SMS: staff not found");
         LibSMS.Staff storage staff = _staff[_staffAddress];
         require(
@@ -237,14 +236,18 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         string memory _name,
         LibSMS.StudentLevel _level,
         string memory _department,
-        string memory _email
-    ) external override onlyOwner returns (uint256) {
+        string memory _email,
+        uint256 _fee
+    ) external onlyOwner returns (bytes32, uint16) {
         require(bytes(_name).length > 0, "SMS: name cannot be empty");
-        require(bytes(_department).length > 0, "SMS: department cannot be empty");
+        require(
+            bytes(_department).length > 0,
+            "SMS: department cannot be empty"
+        );
         require(bytes(_email).length > 0, "SMS: email cannot be empty");
 
-        uint256 studentId = uint256(
-            keccak256(abi.encodePacked(_name, _email, block.timestamp))
+        bytes32 studentId = keccak256(
+            abi.encodePacked(_name, _email, block.timestamp)
         );
 
         _students[studentId] = LibSMS.Student({
@@ -257,56 +260,60 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
             isActive: true,
             paidAt: 0,
             createdAt: uint40(block.timestamp),
-            modifiedAt: uint40(block.timestamp)
+            modifiedAt: uint40(block.timestamp),
+            fee: _fee
         });
         emit StudentAdded(studentId, _name, _level, _department);
 
         // Generate a payment code that students can use to make payment
-        uint16 paymentCode = uint16(uint256(keccak256(abi.encodePacked(studentId))) % 10000);
+        uint16 paymentCode = uint16(
+            uint256(keccak256(abi.encodePacked(studentId))) % 1000000
+        );
         _paymentCodes[studentId] = LibSMS.StudentPaymentCode({
             code: paymentCode,
             studentId: studentId,
             generatedAt: uint40(block.timestamp),
             isUsed: false
         });
-        emit PaymentCodeGenerated(studentId, paymentCode);
-        return studentId;
+        return (studentId, paymentCode);
     }
 
     function updateStudent(
-        uint256 _studentId,
+        bytes32 _studentId,
         string memory _name,
         LibSMS.StudentLevel _level,
         string memory _department,
-        string memory _email
-    ) external override onlyOwner {
+        string memory _email,
+        uint256 _fee
+    ) external onlyOwner {
         require(_students[_studentId].isActive, "SMS: student not found");
-        require(bytes(_name).length > 0, "SMS: name cannot be empty");
-        require(bytes(_department).length > 0, "SMS: department cannot be empty");
-        require(bytes(_email).length > 0, "SMS: email cannot be empty");
 
         LibSMS.Student storage student = _students[_studentId];
-        student.name = _name;
-        student.level = _level;
-        student.department = _department;
-        student.email = _email;
-        student.modifiedAt = uint40(block.timestamp);
 
+        if (bytes(_name).length != 0) student.name = _name;
+        if (bytes(_department).length != 0) student.department = _department;
+        if (bytes(_email).length != 0) student.email = _email;
+        if (_fee != 0) student.fee = _fee;
+        if (LibSMS.getStudentLevelId(_level) != 0) student.level = _level;
+
+        student.modifiedAt = uint40(block.timestamp);
         emit StudentDetailsUpdated(_studentId, _name, _level, _department);
     }
 
-    function removeStudent(uint256 _studentId) external override onlyOwner {
+    function removeStudent(bytes32 _studentId) external override onlyOwner {
         require(_students[_studentId].isActive, "SMS: student not found");
         _students[_studentId].isActive = false;
         emit StudentRemoved(_studentId);
     }
 
-    function makePayment(uint256 _studentId, uint16 _code, uint256 _amount, address _tokenAddress) external override nonReentrant returns (bool) {
+    function makePayment(
+        bytes32 _studentId,
+        uint16 _code,
+        uint256 _amount,
+        address _tokenAddress
+    ) external nonReentrant returns (bool) {
         require(_students[_studentId].isActive, "SMS: student not found");
-        require(
-            isTokenSupported(_tokenAddress),
-            "SMS: token not supported"
-        );
+        require(isTokenSupported(_tokenAddress), "SMS: token not supported");
         require(
             _students[_studentId].paymentStatus == LibSMS.PaymentStatus.UNPAID,
             "SMS: payment already made"
@@ -315,7 +322,10 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
             _paymentCodes[_studentId].code == _code,
             "SMS: invalid payment code"
         );
-        require(!_paymentCodes[_studentId].isUsed, "SMS: payment code already used");
+        require(
+            !_paymentCodes[_studentId].isUsed,
+            "SMS: payment code already used"
+        );
 
         // Mark the payment code as used
         _paymentCodes[_studentId].isUsed = true;
@@ -334,12 +344,16 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         student.paidAt = uint40(block.timestamp);
         student.modifiedAt = uint40(block.timestamp);
 
-        emit StudentPaymentStatusUpdated(_studentId, LibSMS.PaymentStatus.PAID, student.paidAt);
+        emit StudentPaymentStatusUpdated(
+            _studentId,
+            LibSMS.PaymentStatus.PAID,
+            student.paidAt
+        );
         return true;
     }
 
     function getStudentDetails(
-        uint256 _studentId
+        bytes32 _studentId
     ) external view override returns (LibSMS.Student memory) {
         require(_students[_studentId].isActive, "SMS: student not found");
         return _students[_studentId];
