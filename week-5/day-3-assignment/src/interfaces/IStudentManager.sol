@@ -7,13 +7,13 @@ interface IStudentManager {
     event StudentAdded(
         uint256 indexed studentId,
         string name,
-        uint8 level,
+        LibSMS.StudentLevel level,
         string department
     );
     event StudentDetailsUpdated(
         uint256 indexed studentId,
         string name,
-        uint8 level,
+        LibSMS.StudentLevel level,
         string department
     );
     event StudentRemoved(uint256 indexed studentId);

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {IERC173} from "./interfaces/IERC173.sol";
+import {IERC20} from "./interfaces/IERC20.sol";
 import {ITokenManager} from "./interfaces/ITokenManager.sol";
 import {IStaffManager} from "./interfaces/IStaffManager.sol";
 import {IStudentManager} from "./interfaces/IStudentManager.sol";
@@ -26,55 +27,6 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
     mapping(uint256 => LibSMS.Student) private _students;
     mapping(address => LibSMS.Staff) private _staff;
     mapping(uint256 => LibSMS.StudentPaymentCode) private _paymentCodes;
-
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
-    event TokenSupported(
-        address indexed tokenAddress,
-        string tokenSymbol,
-        uint8 tokenDecimals
-    );
-    event TokenRemoved(address indexed tokenAddress);
-    event StaffAdded(
-        address indexed staffAddress,
-        string name,
-        string position
-    );
-    event StaffRemoved(address indexed staffAddress);
-    event SalaryUpdated(
-        address indexed staffAddress,
-        uint256 newSalary,
-        address tokenAddress
-    );
-    event StudentAdded(
-        uint256 indexed studentId,
-        string name,
-        LibSMS.StudentLevel level,
-        string department
-    );
-    event StudentRegistered(
-        address indexed studentAddress,
-        string name,
-        LibSMS.StudentLevel level,
-        string department
-    );
-    event StudentPaymentStatusUpdated(
-        uint256 indexed studentId,
-        LibSMS.PaymentStatus paymentStatus,
-        uint40 paidAt
-    );
-    event StudentDetailsUpdated(
-        uint256 indexed studentId,
-        string name,
-        LibSMS.StudentLevel level,
-        string department
-    );
-    event PaymentCodeGenerated(
-        uint256 indexed studentId,
-        uint16 paymentCode
-    );
 
     error TokenNotFound(address tokenAddress);
 
