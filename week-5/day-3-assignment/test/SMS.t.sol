@@ -34,15 +34,19 @@ contract SMSTest is Test {
         bob = makeAddr("bob");
 
         // Mint tokens to Alice and Bob
-        token.mint(alice, 100e18);
+        token.mint(alice, 100000e18);
         token.mint(bob, 10e18);
 
         // Add token to SMS
         sms.addSupportedToken(address(token), token.symbol(), token.decimals());
+
+        // Set allowance for SMS to spend Alice's tokens
+        vm.prank(alice);
+        token.approve(address(sms), 100000e18);
     }
 
     function testAddStudentWorks() public {
-        (bytes32 studentId,) = sms.addStudent(
+        (bytes32 studentId, ) = sms.addStudent(
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
             "Computer Science",
@@ -73,7 +77,7 @@ contract SMSTest is Test {
         );
     }
 
-    function testMakePayment() public {
+    function testMakePaymentWorks() public {
         (bytes32 studentId, uint16 paymentCode) = sms.addStudent(
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
@@ -81,10 +85,45 @@ contract SMSTest is Test {
             "levi.harrison@example.com",
             500e18
         );
-        
-        
+
         vm.prank(alice);
-        bool success = sms.makePayment(studentId, paymentCode, 500e18, address(token));
+        bool success = sms.makePayment(
+            studentId,
+            paymentCode,
+            500e18,
+            address(token)
+        );
         assertTrue(success);
+    }
+
+    function testMakePaymentDeductsTokensFromPayer() public {
+        (bytes32 studentId, uint16 paymentCode) = sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com",
+            500e18
+        );
+
+        uint256 aliceBalanceBefore = token.balanceOf(alice);
+
+        vm.prank(alice);
+        sms.makePayment(studentId, paymentCode, 500e18, address(token));
+        uint256 aliceBalanceAfter = token.balanceOf(alice);
+        assertLt(aliceBalanceAfter, aliceBalanceBefore);
+    }
+
+    function testMakePaymentFailsWithIncorrectPaymentCode() public {
+        (bytes32 studentId,) = sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com",
+            500e18
+        );
+
+        vm.prank(alice);
+        vm.expectRevert("SMS: invalid payment code");
+        sms.makePayment(studentId, 56432, 500e18, address(token));
     }
 }
