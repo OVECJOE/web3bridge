@@ -14,6 +14,13 @@ contract SMSTest is Test {
     address alice; // parent
     address bob; // staff
 
+    event StudentAdded(
+        uint256 indexed studentId,
+        string name,
+        LibSMS.StudentLevel level,
+        string department
+    );
+
     function setUp() public {
         owner = address(this);
         token = new MockERC20("Mock Token", "MTK", 18);
@@ -45,5 +52,22 @@ contract SMSTest is Test {
         assertEq(student.name, "Levi Harrison");
         assertTrue(student.level == LibSMS.StudentLevel.LEVEL_100);
         assertEq(student.department, "Computer Science");
+    }
+
+    function testAddStudentEmitsExpectedEvents() public {
+        vm.expectEmit(false, false, false, false);
+        emit StudentAdded(
+            0,
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science"
+        );
+
+        sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com"
+        );
     }
 }
