@@ -31,10 +31,14 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
     error TokenNotFound(address tokenAddress);
 
     modifier nonReentrant() {
-        require(_status == 0, "ReentrancyGuard: reentrant call");
-        _status = 1;
+        _nonReentrantAfter();
         _;
-        _status = 0;
+        _nonReentrantAfter();
+    }
+
+    modifier onlyOwner() {
+        _onlyOwner();
+        _;
     }
 
     constructor() {
@@ -43,9 +47,17 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         emit OwnershipTransferred(address(0), _owner);
     }
 
-    modifier onlyOwner() {
+    function _nonReentrantBefore() internal {
+        require(_status == 0, "ReentrancyGuard: reentrant call");
+        _status = 1;
+    }
+
+    function _nonReentrantAfter() internal {
+        _status = 0;
+    }
+
+    function _onlyOwner() internal view {
         require(msg.sender == _owner, "SMS: caller is not the owner");
-        _;
     }
 
     function owner() external view override returns (address) {
@@ -246,9 +258,12 @@ contract SMS is IERC173, ITokenManager, IStaffManager, IStudentManager {
         );
         require(bytes(_email).length > 0, "SMS: email cannot be empty");
 
-        bytes32 studentId = keccak256(
-            abi.encodePacked(_name, _email, block.timestamp)
-        );
+        // Using inline assembly for efficient keccak256
+        bytes32 studentId;
+        bytes memory encoded = abi.encodePacked(_name, _email, block.timestamp);
+        assembly {
+            studentId := keccak256(add(encoded, 0x20), mload(encoded))
+        }
 
         _students[studentId] = LibSMS.Student({
             id: studentId,

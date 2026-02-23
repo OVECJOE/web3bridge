@@ -1,0 +1,445 @@
+
+[1m[0;36m=== Preflight ===[0m
+[0;36m[INFO][0m  Foundry: forge Version: 1.5.1-stable
+Commit SHA: b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2
+Build Timestamp: 2025-12-22T11:39:01.425730780Z (1766403541)
+Build Profile: maxperf
+[0;36m[INFO][0m  RPC : https://rpc.sepolia-api.lisk.com
+[0;36m[INFO][0m  Log : /home/buffy/Documents/code/ps/web3bridge/week-5/deploy_20260221_164857.log
+
+[1m[0;36m=== Discovering projects ===[0m
+[0;36m[INFO][0m  Found 3 project(s):
+[0;36m[INFO][0m    → day-2-assignment
+[0;36m[INFO][0m    → day-3-assignment
+[0;36m[INFO][0m    → day-3-classwork
+
+[1m[0;36m=== Deploying: day-2-assignment ===[0m
+[0;36m[INFO][0m  Installing dependencies...
+[0;36m[INFO][0m  Building...
+No files changed, compilation skipped
+note[unwrapped-modifier-logic]: wrap modifier logic to reduce code size
+  --> src/2bottles.sol:37:5
+   |
+37 | /     modifier onlyOwner() {
+38 | |         require(msg.sender == owner, "Only owner can call this function");
+39 | |         _;
+40 | |     }
+   | |_____^
+   |
+help: wrap modifier logic to reduce code size
+   |
+37 ~     modifier onlyOwner() {
+38 +         _onlyOwner();
+39 +         _;
+40 +     }
+41 + 
+42 +     function _onlyOwner() internal {
+43 +         require(msg.sender == owner, "Only owner can call this function");
+44 +     }
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unwrapped-modifier-logic
+
+note[unwrapped-modifier-logic]: wrap modifier logic to reduce code size
+  --> src/2bottles.sol:42:5
+   |
+42 | /     modifier nonZeroAddress(address _addr) {
+43 | |         require(_addr != address(0), "Address cannot be zero");
+44 | |         _;
+45 | |     }
+   | |_____^
+   |
+help: wrap modifier logic to reduce code size
+   |
+42 ~     modifier nonZeroAddress(address _addr) {
+43 +         _nonZeroAddress(_addr);
+44 +         _;
+45 +     }
+46 + 
+47 +     function _nonZeroAddress(address _addr) internal {
+48 +         require(_addr != address(0), "Address cannot be zero");
+49 +     }
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unwrapped-modifier-logic
+
+note[unwrapped-modifier-logic]: wrap modifier logic to reduce code size
+  --> src/2bottles.sol:47:5
+   |
+47 | /     modifier nonReentrant() {
+48 | |         require(_status != ENTERED, "Reentrant call");
+49 | |         _status = ENTERED;
+50 | |         _;
+51 | |         _status = NOT_ENTERED;
+52 | |     }
+   | |_____^
+   |
+help: wrap modifier logic to reduce code size
+   |
+47 ~     modifier nonReentrant() {
+48 +         _nonReentrantBefore();
+49 +         _;
+50 +         _nonReentrantAfter();
+51 +     }
+52 + 
+53 +     function _nonReentrantBefore() internal {
+54 +         require(_status != ENTERED, "Reentrant call");
+55 +         _status = ENTERED;
+56 +     }
+57 + 
+58 +     function _nonReentrantAfter() internal {
+59 +         _status = NOT_ENTERED;
+60 +     }
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unwrapped-modifier-logic
+
+note[unused-import]: unused imports should be removed
+ --> test/2bottles.t.sol:4:15
+  |
+4 | import {Test, console} from "forge-std/Test.sol";
+  |               ^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unused-import
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+  --> test/2bottles.t.sol:96:9
+   |
+96 |         twoBottles.transfer(alice, amount);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:107:9
+    |
+107 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:117:9
+    |
+117 |         twoBottles.transfer(address(0), amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:124:9
+    |
+124 |         twoBottles.transfer(bob, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:133:9
+    |
+133 |         twoBottles.transfer(owner, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:142:9
+    |
+142 |         twoBottles.transfer(alice, 0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:152:9
+    |
+152 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:158:9
+    |
+158 |         twoBottles.transfer(bob, aliceBalance);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:219:9
+    |
+219 |         twoBottles.transferFrom(owner, bob, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:233:9
+    |
+233 |         twoBottles.transferFrom(owner, bob, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:244:9
+    |
+244 |         twoBottles.transferFrom(owner, bob, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:255:9
+    |
+255 |         twoBottles.transferFrom(owner, address(0), amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:266:9
+    |
+266 |         twoBottles.transferFrom(owner, bob, transferAmount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:404:9
+    |
+404 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:415:9
+    |
+415 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:418:9
+    |
+418 |         twoBottles.transfer(bob, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:421:9
+    |
+421 |         twoBottles.transfer(charlie, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:437:9
+    |
+437 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:462:9
+    |
+462 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:477:9
+    |
+477 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:488:9
+    |
+488 |         twoBottles.transfer(bob, type(uint256).max);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:497:9
+    |
+497 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:512:9
+    |
+512 |         twoBottles.transfer(bob, transferAmount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:540:9
+    |
+540 |         twoBottles.transferFrom(owner, bob, transferAmount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+   --> test/2bottles.t.sol:567:9
+    |
+567 |         twoBottles.transfer(alice, amount);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+[0;36m[INFO][0m  Running script: script/2bottles.s.sol (2bottles)
+error: unexpected argument '--contract' found
+
+  tip: a similar argument exists: '--contracts'
+
+Usage: forge script --contracts <PATH> <PATH> [ARGS]...
+
+For more information, try '--help'.
+[0;31m[ERROR][0m day-2-assignment / 2bottles deployment FAILED.
+
+[1m[0;36m=== Deploying: day-3-assignment ===[0m
+[0;36m[INFO][0m  Installing dependencies...
+[0;36m[INFO][0m  Building...
+Compiling 2 files with Solc 0.8.33
+Solc 0.8.33 finished in 749.96ms
+Compiler run successful!
+note[unused-import]: unused imports should be removed
+ --> test/SMS.t.sol:4:15
+  |
+4 | import {Test, console, Vm} from "forge-std/Test.sol";
+  |               ^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unused-import
+
+note[unused-import]: unused imports should be removed
+ --> test/SMS.t.sol:4:24
+  |
+4 | import {Test, console, Vm} from "forge-std/Test.sol";
+  |                        ^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unused-import
+
+note[unwrapped-modifier-logic]: wrap modifier logic to reduce code size
+  --> src/SMS.sol:33:5
+   |
+33 | /     modifier nonReentrant() {
+34 | |         require(_status == 0, "ReentrancyGuard: reentrant call");
+35 | |         _status = 1;
+36 | |         _;
+37 | |         _status = 0;
+38 | |     }
+   | |_____^
+   |
+help: wrap modifier logic to reduce code size
+   |
+33 ~     modifier nonReentrant() {
+34 +         _nonReentrantBefore();
+35 +         _;
+36 +         _nonReentrantAfter();
+37 +     }
+38 + 
+39 +     function _nonReentrantBefore() internal {
+40 +         require(_status == 0, "ReentrancyGuard: reentrant call");
+41 +         _status = 1;
+42 +     }
+43 + 
+44 +     function _nonReentrantAfter() internal {
+45 +         _status = 0;
+46 +     }
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unwrapped-modifier-logic
+
+note[unwrapped-modifier-logic]: wrap modifier logic to reduce code size
+  --> src/SMS.sol:46:5
+   |
+46 | /     modifier onlyOwner() {
+47 | |         require(msg.sender == _owner, "SMS: caller is not the owner");
+48 | |         _;
+49 | |     }
+   | |_____^
+   |
+help: wrap modifier logic to reduce code size
+   |
+46 ~     modifier onlyOwner() {
+47 +         _onlyOwner();
+48 +         _;
+49 +     }
+50 + 
+51 +     function _onlyOwner() internal {
+52 +         require(msg.sender == _owner, "SMS: caller is not the owner");
+53 +     }
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#unwrapped-modifier-logic
+
+note[asm-keccak256]: use of inefficient hashing mechanism; consider using inline assembly
+   --> src/SMS.sol:249:29
+    |
+249 |           bytes32 studentId = keccak256(
+    |  _____________________________^
+250 | |             abi.encodePacked(_name, _email, block.timestamp)
+251 | |         );
+    | |_________^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#asm-keccak256
+
+[0;36m[INFO][0m  Running script: script/SMS.s.sol (SMS)
+error: unexpected argument '--contract' found
+
+  tip: a similar argument exists: '--contracts'
+
+Usage: forge script --contracts <PATH> <PATH> [ARGS]...
+
+For more information, try '--help'.
+[0;31m[ERROR][0m day-3-assignment / SMS deployment FAILED.
+
+[1m[0;36m=== Deploying: day-3-classwork ===[0m
+[0;36m[INFO][0m  Installing dependencies...
+[0;36m[INFO][0m  Building...
+Compiling 1 files with Solc 0.8.33
+Solc 0.8.33 finished in 573.49ms
+Compiler run successful!
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+  --> src/SaveEther.sol:26:9
+   |
+26 |         token.transferFrom(msg.sender, address(this), _amount);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+warning[erc20-unchecked-transfer]: ERC20 'transfer' and 'transferFrom' calls should check the return value
+  --> src/SaveEther.sol:51:9
+   |
+51 |         token.transfer(msg.sender, _amount);
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#erc20-unchecked-transfer
+
+[0;36m[INFO][0m  Running script: script/SaveEther.s.sol (SaveEther)
+error: unexpected argument '--contract' found
+
+  tip: a similar argument exists: '--contracts'
+
+Usage: forge script --contracts <PATH> <PATH> [ARGS]...
+
+For more information, try '--help'.
+[0;31m[ERROR][0m day-3-classwork / SaveEther deployment FAILED.
+
+[1m[0;36m=== Summary ===[0m
+[0;32m[OK][0m    Passed : 0
+[0;31m[ERROR][0m Failed : 3
+[0;31m[ERROR][0m   ✗ day-2-assignment (deployment failed)
+[0;31m[ERROR][0m   ✗ day-3-assignment (deployment failed)
+[0;31m[ERROR][0m   ✗ day-3-classwork (deployment failed)
+[0;36m[INFO][0m  Full log saved to: /home/buffy/Documents/code/ps/web3bridge/week-5/deploy_20260221_164857.log

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.30;
 
-import {Test, console, Vm} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {LibSMS} from "../src/libraries/LibSMS.sol";
 import {SMS} from "../src/SMS.sol";
@@ -114,7 +114,7 @@ contract SMSTest is Test {
     }
 
     function testMakePaymentFailsWithIncorrectPaymentCode() public {
-        (bytes32 studentId,) = sms.addStudent(
+        (bytes32 studentId, ) = sms.addStudent(
             "Levi Harrison",
             LibSMS.StudentLevel.LEVEL_100,
             "Computer Science",
@@ -125,5 +125,36 @@ contract SMSTest is Test {
         vm.prank(alice);
         vm.expectRevert("SMS: invalid payment code");
         sms.makePayment(studentId, 56432, 500e18, address(token));
+    }
+
+    function testMakePaymentFailsWhenCodeHasBeenUsed() public {
+        (bytes32 studentId, uint16 paymentCode) = sms.addStudent(
+            "Levi Harrison",
+            LibSMS.StudentLevel.LEVEL_100,
+            "Computer Science",
+            "levi.harrison@example.com",
+            500e18
+        );
+
+        vm.prank(alice);
+        for (uint8 i = 0; i < 2; i++) {
+            if (i == 0) {
+                sms.makePayment(studentId, paymentCode, 500e18, address(token));
+            } else {
+                vm.expectRevert("SMS: payment already made");
+                sms.makePayment(studentId, paymentCode, 500e18, address(token));
+            }
+        }
+    }
+
+    function testMakePaymentFailsStudentNotFound() public {
+        vm.prank(alice);
+        vm.expectRevert("SMS: student not found");
+        sms.makePayment(
+            token.addressToBytes32(bob),
+            12345,
+            500e18,
+            address(token)
+        );
     }
 }
