@@ -19,6 +19,10 @@ contract MockERC20 {
         decimals = _decimals;
     }
 
+    function getAddress() external view returns (address) {
+        return address(this);
+    }
+
     function mint(address to, uint256 amount) external {
         balanceOf[to] += amount;
         totalSupply += amount;

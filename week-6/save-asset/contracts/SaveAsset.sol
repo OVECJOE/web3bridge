@@ -10,6 +10,10 @@ contract SaveAsset {
     event DepositSuccessful(address indexed sender, uint256 indexed amount, string tokenType);
     event WithdrawalSuccessful(address indexed receiver, uint256 indexed amount, string tokenType, bytes data);
 
+    function getAddress() external view returns (address) {
+        return address(this);
+    }
+
     function depositEther() external payable {
         require(msg.value > 0, "Can't deposit zero value");
 
