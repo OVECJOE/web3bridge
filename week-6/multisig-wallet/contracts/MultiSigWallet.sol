@@ -57,6 +57,7 @@ contract MultiSigWallet {
             "At least 2 owners required"
         );
         _owners = owners;
+        _transactionCount = 1;
     }
 
     modifier onlyOwner() {
@@ -110,6 +111,10 @@ contract MultiSigWallet {
     receive() external payable {}
 
     fallback() external payable {}
+
+    function transactionCount() external view returns (uint256) {
+        return _transactionCount;
+    }
 
     function getOwnerCount() external view returns (uint256) {
         return _owners.length;
@@ -196,7 +201,9 @@ contract MultiSigWallet {
     ) external onlyOwner {
         require(_to != address(0), "Invalid address");
 
-        _transactions[++_transactionCount] = Transaction({
+        uint256 txId = _transactionCount++;
+
+        _transactions[txId] = Transaction({
             from: msg.sender,
             to: _to,
             value: _value,
@@ -209,11 +216,7 @@ contract MultiSigWallet {
             createdAt: uint40(block.timestamp)
         });
 
-        emit TransactionSubmitted(
-            msg.sender,
-            _transactionCount - 1,
-            uint40(block.timestamp)
-        );
+        emit TransactionSubmitted(msg.sender, txId, uint40(block.timestamp));
     }
 
     function approve(
