@@ -27,6 +27,12 @@ contract MultiSigWallet {
         address approver2;
     }
 
+    struct TransactionRejections {
+        uint8 count;
+        address rejector1;
+        address rejector2;
+    }
+
     struct Deposit {
         address owner;
         uint256 amount;
@@ -37,6 +43,7 @@ contract MultiSigWallet {
     mapping(uint256 => Transaction) private _transactions;
     uint256 private _transactionCount;
     mapping(uint256 => TransactionApprovals) private _approvals;
+    mapping(uint256 => TransactionRejections) private _rejections;
     mapping(address => Deposit) private _deposits;
 
     event OwnerAdded(address indexed owner);
@@ -47,7 +54,7 @@ contract MultiSigWallet {
         uint40 createdAt
     );
     event TransactionApproved(address indexed approver, uint256 transactionId);
-    event TransactionRejected(address indexed approver, uint256 transactionId);
+    event TransactionRejected(address indexed rejector, uint256 transactionId);
     event TransactionExecuted(uint256 transactionId);
     event DepositMade(address indexed owner, uint256 amount);
 
@@ -97,15 +104,24 @@ contract MultiSigWallet {
         }
     }
 
-    function _removeApprover(
-        uint256 _transactionId,
-        address _approver
-    ) internal {
-        if (_approvals[_transactionId].approver1 == _approver) {
-            _approvals[_transactionId].approver1 = address(0);
-        } else if (_approvals[_transactionId].approver2 == _approver) {
-            _approvals[_transactionId].approver2 = address(0);
+    function _addRejector(uint256 _transactionId, address _rejector) internal {
+        if (_rejections[_transactionId].count == 0) {
+            _rejections[_transactionId].rejector1 = _rejector;
+        } else if (_rejections[_transactionId].count == 1) {
+            require(
+                _rejections[_transactionId].rejector1 != _rejector,
+                "Already a rejector"
+            );
+            _rejections[_transactionId].rejector2 = _rejector;
         }
+    }
+
+    function _hasReachedLimit(
+        uint256 _transactionId
+    ) internal view returns (bool) {
+        return
+            _approvals[_transactionId].count == 2 ||
+            _rejections[_transactionId].count == 2;
     }
 
     receive() external payable {}
@@ -149,6 +165,17 @@ contract MultiSigWallet {
     ) external view onlyOwner returns (TransactionApprovals memory) {
         require(_transactionId < _transactionCount, "Invalid transaction id");
         return _approvals[_transactionId];
+    }
+
+    function getRejections(
+        uint256 _transactionId
+    ) external view onlyOwner returns (TransactionRejections memory) {
+        require(_transactionId < _transactionCount, "Invalid transaction id");
+        return _rejections[_transactionId];
+    }
+
+    function getBalance() external view onlyOwner returns (uint256) {
+        return address(this).balance;
     }
 
     function addOwner(address _owner) external onlyOwner {
@@ -222,10 +249,18 @@ contract MultiSigWallet {
     function approve(
         uint256 _transactionId
     ) external onlyOwner onlyPendingTransaction(_transactionId) {
+        require(
+            msg.sender != _transactions[_transactionId].from,
+            "Operation unauthorized"
+        );
+
         _approvals[_transactionId].count++;
         _addApprover(_transactionId, msg.sender);
 
-        if (_approvals[_transactionId].count >= 2) {
+        if (
+            _hasReachedLimit(_transactionId) &&
+            _approvals[_transactionId].count > _rejections[_transactionId].count
+        ) {
             _transactions[_transactionId].status = TransactionApprovalStatus
                 .APPROVED;
             _transactions[_transactionId].approvals++;
@@ -244,8 +279,22 @@ contract MultiSigWallet {
     function reject(
         uint256 _transactionId
     ) external onlyOwner onlyPendingTransaction(_transactionId) {
-        _approvals[_transactionId].count--;
-        _removeApprover(_transactionId, msg.sender);
+        require(
+            msg.sender != _transactions[_transactionId].from,
+            "Operation unauthorized"
+        );
+
+        _rejections[_transactionId].count++;
+        _addRejector(_transactionId, msg.sender);
+
+        if (
+            _hasReachedLimit(_transactionId) &&
+            _rejections[_transactionId].count > _approvals[_transactionId].count
+        ) {
+            _transactions[_transactionId].status = TransactionApprovalStatus
+                .REJECTED;
+            delete _rejections[_transactionId];
+        }
 
         emit TransactionRejected(msg.sender, _transactionId);
     }
@@ -265,7 +314,7 @@ contract MultiSigWallet {
         emit DepositMade(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 _transactionId) external onlyOwner {
+    function execute(uint256 _transactionId) external onlyOwner {
         require(_transactionId < _transactionCount, "Invalid transaction id");
 
         Transaction storage _tx = _transactions[_transactionId];
