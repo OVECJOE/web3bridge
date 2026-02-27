@@ -1,138 +1,190 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-contract MultiSigWallet {
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract MultiSigWallet is Initializable {
+    // ===================== Enums =====================
+
     enum TransactionApprovalStatus {
         PENDING,
         APPROVED,
         REJECTED
     }
 
+    // ===================== Structs =====================
+
     struct Transaction {
-        address from;
+        address creator;
         address to;
         uint256 value;
         bytes data;
         TransactionApprovalStatus status;
         uint8 approvals;
+        uint8 rejections;
         address[] approvers;
+        address[] rejectors;
         bool executed;
         uint40 executedAt;
         uint40 createdAt;
     }
 
-    struct TransactionApprovals {
-        uint8 count;
-        address approver1;
-        address approver2;
-    }
-
-    struct TransactionRejections {
-        uint8 count;
-        address rejector1;
-        address rejector2;
-    }
-
     struct Deposit {
-        address owner;
+        bytes32 txHash;
+        address creator;
         uint256 amount;
         uint40 createdAt;
     }
 
+    // ===================== Constants =====================
+
+    uint256 private constant MAX_OWNERS = 5;
+
+    // ===================== State Variables =====================
+
     address[] private _owners;
-    mapping(uint256 => Transaction) private _transactions;
+    uint256 private _threshold;
+    uint256 private _nonce;
+
+    mapping(address => bool) private _isOwner;
+
+    Transaction[] private _transactions;
+    mapping(uint256 => uint256) private _txIndexes;
     uint256 private _transactionCount;
-    mapping(uint256 => TransactionApprovals) private _approvals;
-    mapping(uint256 => TransactionRejections) private _rejections;
+
+    mapping(uint256 => mapping(address => bool)) private _approvers;
+    mapping(uint256 => mapping(address => bool)) private _rejectors;
+
     mapping(address => Deposit) private _deposits;
+
+    // ===================== Events =====================
+
+    event Initialized(address[] owners, uint256 threshold);
 
     event OwnerAdded(address indexed owner);
     event OwnerRemoved(address indexed owner);
+
     event TransactionSubmitted(
         address indexed sender,
         uint256 transactionId,
         uint40 createdAt
     );
+    event TransactionSigned(address indexed signer, uint256 transactionId);
+    event TransactionUnsigned(address indexed signer, uint256 transactionId);
     event TransactionApproved(address indexed approver, uint256 transactionId);
+    event TransactionIndividuallyRejected(
+        address indexed rejector,
+        uint256 transactionId
+    );
     event TransactionRejected(address indexed rejector, uint256 transactionId);
     event TransactionExecuted(uint256 transactionId);
+
     event DepositMade(address indexed owner, uint256 amount);
 
-    constructor(address[] memory owners) {
-        require(
-            owners.length >= 2 && owners.length <= 3,
-            "At least 2 owners required"
-        );
-        _owners = owners;
-        _transactionCount = 1;
+    // ======================= Custom Errors =========================
+
+    error NotContractOwner();
+    error NotOwner();
+    error AlreadyOwner();
+    error InvalidTransaction();
+    error AlreadyExecuted();
+    error NotPendingTransaction();
+    error AlreadyApproved();
+    error AlreadyRejected();
+    error NotApprover();
+    error NotRejector();
+    error InvalidOwner();
+    error AtLeastOneOwner();
+    error MaxOwnersCountReached();
+    error BadThreshold();
+    error InvalidParam();
+    error OperationUnauthorized();
+    error InvalidAddress();
+
+    // ======================= Modifiers =======================
+
+    modifier onlyContractOwner() {
+        require(msg.sender == _owners[0], NotContractOwner());
+        _;
     }
 
     modifier onlyOwner() {
-        require(_isOwner(msg.sender), "Not an owner");
+        require(_isOwner[msg.sender], NotOwner());
         _;
     }
 
-    modifier onlyPendingTransaction(uint256 _transactionId) {
-        require(_transactionId < _transactionCount, "Invalid transaction id");
+    modifier txExists(uint256 _txId) {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(_txIndex < _transactions.length, InvalidTransaction());
+        _;
+    }
+
+    modifier notExecuted(uint256 _txId) {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(!_transactions[_txIndex].executed, AlreadyExecuted());
+        _;
+    }
+
+    modifier onlyPendingTransaction(uint256 _txId) {
+        uint256 _txIndex = _txIndexes[_txId];
         require(
-            _transactions[_transactionId].status ==
-                TransactionApprovalStatus.PENDING,
-            "Transaction not pending"
+            _transactions[_txIndex].status == TransactionApprovalStatus.PENDING,
+            NotPendingTransaction()
         );
         _;
     }
 
-    function _isOwner(address _owner) internal view returns (bool) {
-        require(_owner != address(0), "Invalid owner");
-        for (uint8 i = 0; i < _owners.length; i++) {
-            if (_owners[i] == _owner) {
-                return true;
-            }
-        }
-        return false;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
-    function _addApprover(uint256 _transactionId, address _approver) internal {
-        if (_approvals[_transactionId].count == 0) {
-            _approvals[_transactionId].approver1 = _approver;
-        } else if (_approvals[_transactionId].count == 1) {
-            require(
-                _approvals[_transactionId].approver1 != _approver,
-                "Already an approver"
-            );
-            _approvals[_transactionId].approver2 = _approver;
-        }
+    // ===================== Internal Functions =====================
+
+    function _addApprover(uint256 _txId, address _approver) internal {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(!_approvers[_txId][_approver], AlreadyApproved());
+        _approvers[_txId][_approver] = true;
+        _transactions[_txIndex].approvals++;
     }
 
-    function _addRejector(uint256 _transactionId, address _rejector) internal {
-        if (_rejections[_transactionId].count == 0) {
-            _rejections[_transactionId].rejector1 = _rejector;
-        } else if (_rejections[_transactionId].count == 1) {
-            require(
-                _rejections[_transactionId].rejector1 != _rejector,
-                "Already a rejector"
-            );
-            _rejections[_transactionId].rejector2 = _rejector;
-        }
+    function _removeApprover(uint256 _txId, address _approver) internal {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(_approvers[_txId][_approver], NotApprover());
+        _approvers[_txId][_approver] = false;
+        _transactions[_txIndex].approvals--;
+    }
+
+    function _addRejector(uint256 _txId, address _rejector) internal {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(!_rejectors[_txId][_rejector], AlreadyRejected());
+        _rejectors[_txId][_rejector] = true;
+        _transactions[_txIndex].rejections++;
+    }
+
+    function _removeRejector(uint256 _txId, address _rejector) internal {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(_rejectors[_txId][_rejector], NotRejector());
+        _rejectors[_txId][_rejector] = false;
+        _transactions[_txIndex].rejections--;
     }
 
     function _hasReachedLimit(
-        uint256 _transactionId
-    ) internal view returns (bool) {
+        uint256 _txId
+    ) internal view txExists(_txId) returns (bool) {
+        uint256 _txIndex = _txIndexes[_txId];
         return
-            _approvals[_transactionId].count == 2 ||
-            _rejections[_transactionId].count == 2;
+            _transactions[_txIndex].approvals >= 2 ||
+            _transactions[_txIndex].rejections >= 2;
     }
 
-    receive() external payable {}
+    // ===================== Public Functions =====================
 
-    fallback() external payable {}
-
-    function transactionCount() external view returns (uint256) {
+    function getTxCount() external view returns (uint256) {
         return _transactionCount;
     }
 
-    function getOwnerCount() external view returns (uint256) {
+    function getOwnersCount() external view returns (uint256) {
         return _owners.length;
     }
 
@@ -143,15 +195,19 @@ contract MultiSigWallet {
     function getOwner(
         uint256 _index
     ) external view onlyOwner returns (address) {
-        require(_index < _owners.length, "Invalid index");
+        require(_index < _owners.length, InvalidParam());
         return _owners[_index];
     }
 
     function getTransaction(
-        uint256 _transactionId
-    ) external view onlyOwner returns (Transaction memory) {
-        require(_transactionId < _transactionCount, "Invalid transaction id");
-        return _transactions[_transactionId];
+        uint256 _txId
+    ) external view onlyOwner txExists(_txId) returns (Transaction memory) {
+        uint256 _txIndex = _txIndexes[_txId];
+        return _transactions[_txIndex];
+    }
+
+    function getWalletBalance() external view onlyOwner returns (uint256) {
+        return address(this).balance;
     }
 
     function getDeposit(
@@ -160,143 +216,194 @@ contract MultiSigWallet {
         return _deposits[_owner];
     }
 
-    function getApprovals(
-        uint256 _transactionId
-    ) external view onlyOwner returns (TransactionApprovals memory) {
-        require(_transactionId < _transactionCount, "Invalid transaction id");
-        return _approvals[_transactionId];
+    function getDepositAmount(
+        address _owner
+    ) external view onlyOwner returns (uint256) {
+        return _deposits[_owner].amount;
     }
 
-    function getRejections(
-        uint256 _transactionId
-    ) external view onlyOwner returns (TransactionRejections memory) {
-        require(_transactionId < _transactionCount, "Invalid transaction id");
-        return _rejections[_transactionId];
+    function getTotalDeposits() external view onlyOwner returns (uint256) {
+        uint256 totalDeposits = 0;
+        for (uint256 i = 0; i < _owners.length; i++) {
+            totalDeposits += _deposits[_owners[i]].amount;
+        }
+        return totalDeposits;
     }
 
-    function getBalance() external view onlyOwner returns (uint256) {
-        return address(this).balance;
+    function initialize(
+        address[] calldata _signers,
+        uint256 _requiredConfirmations
+    ) external initializer {
+        require(_signers.length >= 1, AtLeastOneOwner());
+        require(
+            _requiredConfirmations >= 1 &&
+                _requiredConfirmations <= _signers.length,
+            BadThreshold()
+        );
+
+        for (uint256 i = 0; i < _signers.length; ) {
+            address owner = _signers[i];
+
+            require(owner != address(0), InvalidOwner());
+            require(!_isOwner[owner], AlreadyOwner());
+
+            _isOwner[owner] = true;
+            _owners.push(owner);
+
+            emit OwnerAdded(owner);
+
+            unchecked {
+                i++;
+            }
+        }
+
+        _threshold = _requiredConfirmations;
+        emit Initialized(_owners, _requiredConfirmations);
     }
 
-    function addOwner(address _owner) external onlyOwner {
-        require(!_isOwner(_owner), "Already an owner");
-        require(_owners.length < 3, "Max 3 owners");
+    function addOwner(address _newOwner) external onlyContractOwner {
+        require(_newOwner != address(0), InvalidOwner());
+        require(!_isOwner[_newOwner], AlreadyOwner());
+        require(_owners.length < MAX_OWNERS, MaxOwnersCountReached());
 
-        _owners.push(_owner);
-        emit OwnerAdded(_owner);
+        _isOwner[_newOwner] = true;
+        _owners.push(_newOwner);
+        emit OwnerAdded(_newOwner);
     }
 
-    function removeOwner(address _owner) external onlyOwner returns (bool) {
-        require(_isOwner(_owner), "Not an owner");
-        require(_owners.length > 2, "Min 2 owners");
+    function removeOwner(address _owner) external onlyContractOwner {
+        require(_owner != address(0), InvalidOwner());
+        require(_isOwner[_owner], NotOwner());
+        require(_owners.length > 1, AtLeastOneOwner());
 
         for (uint8 i = 0; i < _owners.length; i++) {
             if (_owners[i] == _owner) {
-                require(i != 0, "Operation unauthorized");
+                require(i != 0, OperationUnauthorized());
                 _owners[i] = _owners[_owners.length - 1];
                 _owners.pop();
 
+                _isOwner[_owner] = false;
                 emit OwnerRemoved(_owner);
-                return true;
+                break;
             }
         }
-        return false;
     }
 
     function replaceOwner(
         address _oldOwner,
         address _newOwner
-    ) external onlyOwner returns (bool) {
-        require(_isOwner(_oldOwner), "Not an owner");
-        require(!_isOwner(_newOwner), "Already an owner");
+    ) external onlyContractOwner {
+        require(_oldOwner != address(0), InvalidOwner());
+        require(_newOwner != address(0), InvalidOwner());
+        require(_oldOwner != _newOwner, InvalidParam());
+        require(_isOwner[_oldOwner], NotOwner());
+        require(!_isOwner[_newOwner], AlreadyOwner());
 
         for (uint8 i = 0; i < _owners.length; i++) {
             if (_owners[i] == _oldOwner) {
                 _owners[i] = _newOwner;
                 emit OwnerRemoved(_oldOwner);
                 emit OwnerAdded(_newOwner);
-                return true;
+                break;
             }
         }
-        return false;
     }
 
-    function submit(
+    function initiateTransaction(
         address _to,
         uint256 _value,
         bytes memory _data
     ) external onlyOwner {
-        require(_to != address(0), "Invalid address");
+        require(_to != address(0), InvalidAddress());
 
         uint256 txId = _transactionCount++;
+        uint40 createdAt = uint40(block.timestamp);
 
-        _transactions[txId] = Transaction({
-            from: msg.sender,
-            to: _to,
-            value: _value,
-            data: _data,
-            status: TransactionApprovalStatus.PENDING,
-            approvals: 0,
-            approvers: new address[](3),
-            executed: false,
-            executedAt: uint40(0),
-            createdAt: uint40(block.timestamp)
-        });
+        _transactions.push(
+            Transaction({
+                creator: msg.sender,
+                to: _to,
+                value: _value,
+                data: _data,
+                status: TransactionApprovalStatus.PENDING,
+                approvals: 0,
+                rejections: 0,
+                approvers: new address[](MAX_OWNERS),
+                rejectors: new address[](MAX_OWNERS),
+                executed: false,
+                executedAt: uint40(0),
+                createdAt: createdAt
+            })
+        );
+        _txIndexes[txId] = _transactions.length - 1;
 
-        emit TransactionSubmitted(msg.sender, txId, uint40(block.timestamp));
+        emit TransactionSubmitted(msg.sender, txId, createdAt);
     }
 
-    function approve(
-        uint256 _transactionId
-    ) external onlyOwner onlyPendingTransaction(_transactionId) {
+    function signTransaction(
+        uint256 _txId
+    ) external onlyOwner onlyPendingTransaction(_txId) {
+        uint256 _txIndex = _txIndexes[_txId];
         require(
-            msg.sender != _transactions[_transactionId].from,
-            "Operation unauthorized"
+            msg.sender != _transactions[_txIndex].creator,
+            OperationUnauthorized()
         );
 
-        _approvals[_transactionId].count++;
-        _addApprover(_transactionId, msg.sender);
+        uint256 approvalCount = _transactions[_txIndex].approvals;
+        require(approvalCount < _threshold, OperationUnauthorized());
 
-        if (
-            _hasReachedLimit(_transactionId) &&
-            _approvals[_transactionId].count > _rejections[_transactionId].count
-        ) {
-            _transactions[_transactionId].status = TransactionApprovalStatus
-                .APPROVED;
-            _transactions[_transactionId].approvals++;
-            _transactions[_transactionId].approvers = [
-                _approvals[_transactionId].approver1,
-                _approvals[_transactionId].approver2
-            ];
+        _approvers[_txId][msg.sender] = true;
+        _transactions[_txIndex].approvals++;
+        _transactions[_txIndex].approvers[approvalCount] = msg.sender;
 
-            // Remove approvals
-            delete _approvals[_transactionId];
+        if (_transactions[_txIndex].approvals >= _threshold) {
+            _transactions[_txIndex].status = TransactionApprovalStatus.APPROVED;
+            emit TransactionApproved(msg.sender, _txId);
         }
 
-        emit TransactionApproved(msg.sender, _transactionId);
+        emit TransactionSigned(msg.sender, _txId);
     }
 
-    function reject(
-        uint256 _transactionId
-    ) external onlyOwner onlyPendingTransaction(_transactionId) {
+    function unsignTransaction(
+        uint256 _txId
+    ) external onlyOwner onlyPendingTransaction(_txId) {
+        uint256 _txIndex = _txIndexes[_txId];
         require(
-            msg.sender != _transactions[_transactionId].from,
-            "Operation unauthorized"
+            msg.sender != _transactions[_txIndex].creator,
+            OperationUnauthorized()
         );
 
-        _rejections[_transactionId].count++;
-        _addRejector(_transactionId, msg.sender);
+        uint256 approvalCount = _transactions[_txIndex].approvals;
+        require(approvalCount < _threshold, OperationUnauthorized());
 
-        if (
-            _hasReachedLimit(_transactionId) &&
-            _rejections[_transactionId].count > _approvals[_transactionId].count
-        ) {
-            _transactions[_transactionId].status = TransactionApprovalStatus
-                .REJECTED;
-            delete _rejections[_transactionId];
+        _removeApprover(_txId, msg.sender);
+        _transactions[_txIndex].approvers[approvalCount - 1] = address(0);
+
+        emit TransactionUnsigned(msg.sender, _txId);
+    }
+
+    function rejectTransaction(
+        uint256 _txId
+    ) external onlyOwner onlyPendingTransaction(_txId) {
+        uint256 _txIndex = _txIndexes[_txId];
+        require(
+            msg.sender != _transactions[_txIndex].creator,
+            OperationUnauthorized()
+        );
+
+        uint256 rejectionCount = _transactions[_txIndex].rejections;
+        require(rejectionCount < _threshold, OperationUnauthorized());
+
+        _rejectors[_txId][msg.sender] = true;
+        _transactions[_txIndex].rejections++;
+        _transactions[_txIndex].rejectors[rejectionCount] = msg.sender;
+
+        if (_transactions[_txIndex].rejections >= _threshold) {
+            _transactions[_txIndex].status = TransactionApprovalStatus.REJECTED;
+            emit TransactionRejected(msg.sender, _txId);
         }
 
-        emit TransactionRejected(msg.sender, _transactionId);
+        emit TransactionIndividuallyRejected(msg.sender, _txId);
     }
 
     function deposit() external payable onlyOwner {
@@ -306,7 +413,10 @@ contract MultiSigWallet {
         require(success, "Deposit failed");
 
         _deposits[msg.sender] = Deposit({
-            owner: msg.sender,
+            txHash: keccak256(
+                abi.encode(msg.sender, msg.value, block.timestamp)
+            ),
+            creator: msg.sender,
             amount: msg.value,
             createdAt: uint40(block.timestamp)
         });
@@ -319,7 +429,7 @@ contract MultiSigWallet {
 
         Transaction storage _tx = _transactions[_transactionId];
 
-        require(msg.sender == _tx.from, "Not the transaction owner");
+        require(msg.sender == _tx.creator, "Not the transaction owner");
         require(
             _tx.status == TransactionApprovalStatus.APPROVED,
             "Transaction not approved"
@@ -334,4 +444,8 @@ contract MultiSigWallet {
 
         emit TransactionExecuted(_transactionId);
     }
+
+    receive() external payable {}
+
+    fallback() external payable {}
 }
