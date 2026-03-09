@@ -33,7 +33,7 @@ contract TaultNFT is ERC721, Ownable {
         address vault = vaultOf[_tokenId];
         IERC20Metadata token = IERC20Metadata(address(Tault(vault).token()));
         return
-            SVGLib.qrCodeGenerateTokenURI(
+            SVGLib.sissyGenerateTokenURI(
                 token.name(),
                 token.symbol(),
                 address(token),
