@@ -45,7 +45,7 @@ contract EvictionVaultTest is Test {
 
     function testWithdrawDeductsFromSignerBalance() public {
         vm.prank(signers[0]);
-        vault.deposit{value: 2 ether}();
+        vault.withdraw(2 ether);
         vm.assertEq(vault.balances(signers[0]), 8 ether);
         vm.assertEq(vault.totalVaultValue(), 8 ether);
     }

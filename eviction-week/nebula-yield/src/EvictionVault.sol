@@ -47,6 +47,7 @@ contract EvictionVault is Ownable, Pausable {
             signers.push(signer);
         }
 
+        balances[msg.sender] = msg.value;
         totalVaultValue = msg.value;
     }
 
