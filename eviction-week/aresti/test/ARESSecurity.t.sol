@@ -146,7 +146,6 @@ contract ARESSecurityTest is Test {
 
     // 4. Double Claim (Merkle)
     function test_RevertIf_DoubleClaim() public {
-        bytes32 root = 0x242857e4e16d4128fbfd84f2c00af906b677051df31d56ceec554a9388dfba4c; // pre-calculated
         bytes32[] memory proof = new bytes32[](1);
         proof[0] = 0x1234567812345678123456781234567812345678123456781234567812345678; // Dummy, won't matter if we just mock the tree
         // We need a real merkle tree to pass the first verification. Let's just mock verification or build a small rust-like tree in solidity?
