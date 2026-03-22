@@ -62,9 +62,9 @@ export default function Transfer() {
 
   return (
     <div className="animate-fade-in" style={{ maxWidth: 520, margin: "0 auto" }}>
-      <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32, marginBottom: 6 }}>Transfer</div>
+      <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32, marginBottom: 6 }}>Send Tokens</div>
       <div style={{ color: "var(--muted)", marginBottom: 32 }}>
-        Send $MEOW to any address. Transfers ≥ 10,000 $MEOW mint an Ocelot NFT to the receiver.
+        Send $MEOW to another wallet. Large transfers unlock a bonus NFT for the receiver.
       </div>
 
       <div style={{
@@ -78,14 +78,14 @@ export default function Transfer() {
           marginBottom: 20, padding: "10px 14px",
           background: "var(--surface2)", borderRadius: "var(--radius)",
         }}>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>Your balance</span>
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>Available to send</span>
           <span style={{ fontFamily: "Syne", fontWeight: 700, color: "var(--gold)" }}>
             {isConnected ? formatMeow(tokenBalance, 4) : "—"} $MEOW
           </span>
         </div>
 
         <InputField
-          label="Recipient Address"
+          label="Receiver Wallet Address"
           placeholder="0x..."
           value={to}
           onChange={e => setTo(e.target.value)}
@@ -94,7 +94,7 @@ export default function Transfer() {
 
         <div style={{ position: "relative" }}>
           <InputField
-            label="Amount"
+            label="Amount to Send"
             placeholder="0.00"
             type="number"
             min="0"
@@ -125,13 +125,13 @@ export default function Transfer() {
             padding: "14px", marginBottom: 20, fontSize: 12,
           }}>
             <div style={{ fontFamily: "Syne", fontWeight: 700, marginBottom: 8, fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 1 }}>
-              Fee Breakdown
+              What Happens to This Transfer
             </div>
             {[
-              { label: "🔥 Burn (1%)",         value: formatMeow(burnAmt),     color: "var(--red)" },
-              { label: "🏦 Treasury (0.5%)",    value: formatMeow(treasuryAmt), color: "var(--amber)" },
-              { label: "🔥 Extra Burn (0.5%)",  value: formatMeow(extraBurn),   color: "var(--red)" },
-              { label: "✅ Recipient receives", value: formatMeow(netAmt) + " $MEOW", color: "var(--teal)" },
+              { label: "Burned",              value: formatMeow(burnAmt),     color: "var(--red)" },
+              { label: "Project Treasury",    value: formatMeow(treasuryAmt), color: "var(--amber)" },
+              { label: "Extra Burn",          value: formatMeow(extraBurn),   color: "var(--red)" },
+              { label: "Receiver Gets",       value: formatMeow(netAmt) + " $MEOW", color: "var(--teal)" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ color: "var(--muted)" }}>{label}</span>
@@ -150,15 +150,15 @@ export default function Transfer() {
             borderRadius: "var(--radius)", fontSize: 12, color: "var(--purple)",
           }}>
             <span style={{ fontSize: 20 }}>🐆</span>
-            <span><strong>NFT Alert!</strong> This transfer will mint an Ocelot NFT to the recipient!</span>
+            <span><strong>Bonus unlocked.</strong> This transfer will mint a collectible NFT for the receiver.</span>
           </div>
         )}
 
         {!isConnected ? (
-          <div style={{ textAlign: "center", color: "var(--muted)", fontSize: 13 }}>Connect your wallet</div>
+          <div style={{ textAlign: "center", color: "var(--muted)", fontSize: 13 }}>Connect your wallet to send tokens</div>
         ) : (
           <TxButton fullWidth onClick={handleTransfer} loading={isPending || isConfirming}>
-            {isPending ? "Confirm in wallet…" : isConfirming ? "Confirming…" : "Send $MEOW"}
+            {isPending ? "Approve in wallet…" : isConfirming ? "Processing…" : "Send $MEOW"}
           </TxButton>
         )}
 

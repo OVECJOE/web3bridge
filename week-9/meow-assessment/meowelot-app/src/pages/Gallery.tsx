@@ -17,7 +17,7 @@ function OcelotCard({ nft, isMobile }: { nft: OcelotNFT; isMobile: boolean }) {
       svgSrc = json.image;
     }
   } catch {
-    setImgError(true);
+    svgSrc = "";
   }
 
   const ACC_ICONS: Record<string, string> = {
@@ -74,7 +74,7 @@ function OcelotCard({ nft, isMobile }: { nft: OcelotNFT; isMobile: boolean }) {
       {/* Info */}
       <div style={{ padding: isMobile ? "12px" : "14px" }}>
         <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, marginBottom: 10 }}>
-          Meowelot Ocelot #{tokenId}
+          Collectible #{tokenId}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 11 }}>
           {[
@@ -92,7 +92,7 @@ function OcelotCard({ nft, isMobile }: { nft: OcelotNFT; isMobile: boolean }) {
           ))}
         </div>
         <div style={{ marginTop: 10, padding: "6px 8px", background: "rgba(128,96,240,0.1)", borderRadius: 6 }}>
-          <span style={{ fontSize: 10, color: "var(--muted)" }}>Earned by transferring </span>
+          <span style={{ fontSize: 10, color: "var(--muted)" }}>Unlocked by sending </span>
           <span style={{ fontSize: 11, color: "var(--purple)", fontFamily: "Syne", fontWeight: 700 }}>
             {formatMeow(traits.amount)} $MEOW
           </span>
@@ -118,8 +118,8 @@ export default function Gallery() {
     return (
       <div className="animate-fade-in" style={{ textAlign: "center", paddingTop: isMobile ? 36 : 80 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🐆</div>
-        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>My Ocelots</div>
-        <div style={{ color: "var(--muted)" }}>Connect your wallet to see your Ocelot NFTs</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>My Collectibles</div>
+        <div style={{ color: "var(--muted)" }}>Connect your wallet to view your NFT collectibles</div>
       </div>
     );
   }
@@ -127,13 +127,13 @@ export default function Gallery() {
   return (
     <div className="animate-fade-in">
       <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32 }}>My Ocelots</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32 }}>My Collectibles</div>
         <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 18, color: "var(--gold)" }}>
           {count}
         </div>
       </div>
       <div style={{ color: "var(--muted)", marginBottom: 32 }}>
-        Soulbound NFTs earned by transferring ≥ 10,000 $MEOW. Fully on-chain SVG art.
+        These NFTs are earned from larger transfers and stay permanently linked to your wallet.
       </div>
 
       {count === 0 ? (
@@ -143,9 +143,9 @@ export default function Gallery() {
           borderRadius: "var(--radius-lg)",
         }}>
           <div style={{ fontSize: 64, marginBottom: 16 }}>🐾</div>
-          <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No Ocelots Yet</div>
+          <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No Collectibles Yet</div>
           <div style={{ color: "var(--muted)", maxWidth: 320, margin: "0 auto" }}>
-            Transfer ≥ 10,000 $MEOW to any address to earn your first spotted companion.
+            Send at least 10,000 $MEOW in one transfer to unlock your first collectible.
           </div>
         </div>
       ) : (

@@ -60,7 +60,7 @@ export default function Mint() {
       <div className="animate-fade-in" style={{ textAlign: "center", paddingTop: isMobile ? 36 : 80 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
         <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Connect Wallet</div>
-        <div style={{ color: "var(--muted)" }}>Connect to check owner access</div>
+        <div style={{ color: "var(--muted)" }}>Connect wallet to check if you have admin mint access</div>
       </div>
     );
   }
@@ -69,8 +69,8 @@ export default function Mint() {
     return (
       <div className="animate-fade-in" style={{ textAlign: "center", paddingTop: isMobile ? 36 : 80 }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
-        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Owner Only</div>
-        <div style={{ color: "var(--muted)" }}>Only the contract owner can mint tokens.</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 20, marginBottom: 8 }}>Admin Only</div>
+        <div style={{ color: "var(--muted)" }}>Only the project owner can create new $MEOW.</div>
       </div>
     );
   }
@@ -82,15 +82,15 @@ export default function Mint() {
   return (
     <div className="animate-fade-in" style={{ maxWidth: 520, margin: "0 auto" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
-        <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32 }}>Mint Tokens</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32 }}>Create New Tokens</div>
         <div style={{
           padding: "3px 10px", background: "rgba(128,96,240,0.15)",
           border: "1px solid var(--purple)", borderRadius: "var(--radius)",
           fontSize: 11, color: "var(--purple)", fontFamily: "Syne", fontWeight: 700,
-        }}>OWNER</div>
+        }}>ADMIN</div>
       </div>
       <div style={{ color: "var(--muted)", marginBottom: 32 }}>
-        Mint new $MEOW up to the 10M hard cap.
+        Create additional $MEOW supply, up to the maximum limit.
       </div>
 
       {/* Supply status */}
@@ -98,7 +98,7 @@ export default function Mint() {
         background: "var(--surface)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)", padding: isMobile ? "16px 14px" : "20px 24px", marginBottom: 20,
       }}>
-        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Supply Status</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 13, marginBottom: 12 }}>Current Supply Status</div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
           {[
             { label: "Current",   value: formatMeow(info.totalSupply),   color: "var(--gold)" },
@@ -125,7 +125,7 @@ export default function Mint() {
         borderRadius: "var(--radius-lg)", padding: isMobile ? "18px 14px" : "28px",
       }}>
         <InputField
-          label="Mint To (leave blank for your wallet)"
+          label="Send New Tokens To (leave blank to use your wallet)"
           placeholder={address ?? "0x..."}
           value={to}
           onChange={e => setTo(e.target.value)}
@@ -133,7 +133,7 @@ export default function Mint() {
         />
 
         <InputField
-          label="Amount"
+          label="Amount to Create"
           placeholder="0"
           type="number"
           min="0"
@@ -148,7 +148,7 @@ export default function Mint() {
             padding: "12px 14px", marginBottom: 20,
             background: "var(--surface2)", borderRadius: "var(--radius)", fontSize: 12,
           }}>
-            <div style={{ color: "var(--muted)", marginBottom: 4 }}>After mint, supply will be:</div>
+            <div style={{ color: "var(--muted)", marginBottom: 4 }}>After creating tokens, total supply will be:</div>
             <div style={{ fontFamily: "Syne", fontWeight: 700, color: "var(--gold)" }}>
               {formatMeow(supplyAfter)} $MEOW ({pctAfter.toFixed(2)}% of max)
             </div>
@@ -156,7 +156,7 @@ export default function Mint() {
         )}
 
         <TxButton fullWidth onClick={handleMint} loading={isPending || isConfirming}>
-          {isPending ? "Confirm in wallet…" : isConfirming ? "Confirming…" : "Mint $MEOW"}
+          {isPending ? "Approve in wallet…" : isConfirming ? "Processing…" : "Create $MEOW"}
         </TxButton>
 
         {hash && (

@@ -50,10 +50,10 @@ export default function Faucet() {
   return (
     <div className="animate-fade-in" style={{ maxWidth: 520, margin: "0 auto" }}>
       <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32, marginBottom: 6 }}>
-        Token Faucet
+        Get Free Tokens
       </div>
       <div style={{ color: "var(--muted)", marginBottom: 32 }}>
-        Claim 1,000 $MEOW every 24 hours. Each address has its own independent cooldown.
+        Claim free $MEOW in one tap. You can claim again after 24 hours per wallet.
       </div>
 
       {/* Circle timer */}
@@ -82,7 +82,7 @@ export default function Faucet() {
               <>
                 <div style={{ fontSize: 32 }}>🐆</div>
                 <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 15, color: "var(--teal)", marginTop: 4 }}>
-                  READY
+                  CLAIM NOW
                 </div>
               </>
             ) : (
@@ -98,12 +98,12 @@ export default function Faucet() {
 
         <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 24 }}>
           {canClaim
-            ? "Your ocelot is hungry. Feed it tokens."
+            ? "You are eligible to claim right now."
             : formatCountdown(secondsLeft)}
         </div>
 
         {!isConnected ? (
-          <div style={{ color: "var(--muted)", fontSize: 13 }}>Connect your wallet to claim</div>
+          <div style={{ color: "var(--muted)", fontSize: 13 }}>Connect your wallet to get free tokens</div>
         ) : (
           <TxButton
             fullWidth
@@ -111,7 +111,7 @@ export default function Faucet() {
             disabled={!canClaim}
             loading={isPending || isConfirming}
           >
-            {isPending ? "Confirm in wallet…" : isConfirming ? "Confirming…" : "Claim 1,000 $MEOW"}
+            {isPending ? "Approve in wallet…" : isConfirming ? "Processing…" : "Get 1,000 $MEOW"}
           </TxButton>
         )}
 
@@ -128,10 +128,10 @@ export default function Faucet() {
       {/* Info cards */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
         {[
-          { label: "Claim Amount",   value: "1,000 $MEOW", color: "var(--gold)" },
-          { label: "Cooldown",       value: "24 hours",    color: "var(--amber)" },
-          { label: "Your Balance",   value: isConnected ? formatMeow(tokenBalance) + " $MEOW" : "—", color: "var(--teal)" },
-          { label: "Timer Type",     value: "Per-wallet",  color: "var(--purple)" },
+          { label: "You Receive",     value: "1,000 $MEOW", color: "var(--gold)" },
+          { label: "Wait Time",       value: "24 hours",    color: "var(--amber)" },
+          { label: "Your Balance",    value: isConnected ? formatMeow(tokenBalance) + " $MEOW" : "—", color: "var(--teal)" },
+          { label: "Rule",            value: "One timer per wallet",  color: "var(--purple)" },
         ].map(({ label, value, color }) => (
           <div key={label} style={{
             background: "var(--surface)", border: "1px solid var(--border)",

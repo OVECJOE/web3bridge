@@ -7,11 +7,11 @@ import { formatMeow, shortenAddress } from "../lib/utils";
 import { useIsMobile } from "../hooks/useIsMobile";
 
 const NAV = [
-  { to: "/",          label: "Dashboard",  icon: "⬡" },
-  { to: "/faucet",    label: "Faucet",     icon: "⌀" },
-  { to: "/transfer",  label: "Transfer",   icon: "→" },
-  { to: "/mint",      label: "Mint",       icon: "✦" },
-  { to: "/gallery",   label: "My Ocelots", icon: "◈" },
+  { to: "/",          label: "Home",            icon: "⬡" },
+  { to: "/faucet",    label: "Get Free Tokens", icon: "⌀" },
+  { to: "/transfer",  label: "Send Tokens",     icon: "→" },
+  { to: "/mint",      label: "Admin Mint",      icon: "✦" },
+  { to: "/gallery",   label: "My Collectibles", icon: "◈" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -66,7 +66,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               MEOWELOT
             </div>
             {(!isMobile || navOpen) && (
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>$MEOW on Lisk Sepolia</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Friendly token app on Lisk Sepolia</div>
             )}
           </div>
           {isMobile && (
@@ -127,7 +127,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             background: "var(--surface2)", borderRadius: "var(--radius)",
             border: "1px solid var(--border)",
           }}>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Connected</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>Wallet connected</div>
             <div style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, marginBottom: 4 }}>
               {shortenAddress(address)}
             </div>
@@ -135,7 +135,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {formatMeow(tokenBalance)} $MEOW
             </div>
             <div style={{ fontSize: 11, color: "var(--teal)", marginTop: 2 }}>
-              {nftBalance.toString()} Ocelot NFTs
+              {nftBalance.toString()} collectible NFTs
             </div>
           </div>
         )}

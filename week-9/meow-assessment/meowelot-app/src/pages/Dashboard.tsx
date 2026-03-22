@@ -41,10 +41,10 @@ export default function Dashboard() {
           fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 24 : 36,
           color: "var(--gold)", lineHeight: 1, marginBottom: 8,
         }}>
-          Welcome back, {isConnected ? user.isOwner ? "Owner" : "Meowvelot" : "Visitor"}!
+          Welcome to Meowelot
         </div>
         <div style={{ fontSize: isMobile ? 14 : 16, color: "var(--muted)", marginBottom: 20 }}>
-          The spotted meme coin of Lisk Sepolia · $MEOW
+          A simple place to get, send, and track your $MEOW tokens.
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
@@ -66,10 +66,10 @@ export default function Dashboard() {
 
       {/* Stats grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
-        <StatCard label="Total Supply"    value={formatMeow(info.totalSupply)} sub={`${supplyPct.toFixed(2)}% of max`} accent="var(--gold)"   icon="◎" />
-        <StatCard label="Total Burned 🔥" value={formatMeow(info.totalBurned)} sub={`${burnPct.toFixed(2)}% burned`}   accent="var(--red)"    icon="🔥" />
-        <StatCard label="Remaining Mint"  value={formatMeow(info.remainingMint)} sub="owner can still mint"            accent="var(--teal)"   icon="✦" />
-        <StatCard label="Max Supply"      value={formatMeow(info.maxSupply)}   sub="hard cap"                         accent="var(--purple)"  icon="⬡" />
+        <StatCard label="Tokens Created"          value={formatMeow(info.totalSupply)} sub={`${supplyPct.toFixed(2)}% of maximum`} accent="var(--gold)"   icon="◎" />
+        <StatCard label="Tokens Removed"       value={formatMeow(info.totalBurned)} sub={`${burnPct.toFixed(2)}% removed`}      accent="var(--red)"    icon="🔥" />
+        <StatCard label="Still Mintable"          value={formatMeow(info.remainingMint)} sub="only app owner can mint"             accent="var(--teal)"   icon="✦" />
+        <StatCard label="Maximum Supply Limit"    value={formatMeow(info.maxSupply)}   sub="hard cap"                              accent="var(--purple)"  icon="⬡" />
       </div>
 
       {/* Supply bar */}
@@ -78,7 +78,7 @@ export default function Dashboard() {
         borderRadius: "var(--radius-lg)", padding: isMobile ? "16px 14px" : "20px 24px", marginBottom: 24,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>Supply Distribution</span>
+          <span style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14 }}>Token Supply Overview</span>
           <span style={{ fontSize: 12, color: "var(--muted)" }}>{supplyPct.toFixed(2)}% minted</span>
         </div>
         <div style={{ height: 10, background: "var(--surface2)", borderRadius: 5, overflow: "hidden" }}>
@@ -89,9 +89,9 @@ export default function Dashboard() {
           }} />
         </div>
         <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 11, color: "var(--muted)", flexWrap: "wrap" }}>
-          <span>⬤ <span style={{ color: "var(--gold)" }}>Circulating</span>: {formatMeow(info.totalSupply)}</span>
-          <span>⬤ <span style={{ color: "var(--red)" }}>Burned</span>: {formatMeow(info.totalBurned)}</span>
-          <span>⬤ <span style={{ color: "var(--border2)" }}>Unminted</span>: {formatMeow(info.remainingMint)}</span>
+          <span>⬤ <span style={{ color: "var(--gold)" }}>In Wallets</span>: {formatMeow(info.totalSupply)}</span>
+          <span>⬤ <span style={{ color: "var(--red)" }}>Removed</span>: {formatMeow(info.totalBurned)}</span>
+          <span>⬤ <span style={{ color: "var(--border2)" }}>Not Yet Minted</span>: {formatMeow(info.remainingMint)}</span>
         </div>
       </div>
 
@@ -100,15 +100,15 @@ export default function Dashboard() {
         background: "var(--surface)", border: "1px solid var(--border)",
         borderRadius: "var(--radius-lg)", padding: isMobile ? "16px 14px" : "20px 24px", marginBottom: 24,
       }}>
-        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, marginBottom: 16 }}>Tokenomics</div>
+        <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 14, marginBottom: 16 }}>How Transfers Work</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
           {[
-            { label: "Transfer Burn",    value: `${Number(info.burnFeeBps)}%`,      color: "var(--red)" },
-            { label: "Treasury Tax",     value: `${Number(info.treasuryFeeBps)/100}%`, color: "var(--amber)" },
-            { label: "Extra Burn (tax)", value: "0.5%",                              color: "var(--red)" },
-            { label: "Anti-Whale Cap",   value: formatMeow(info.antiWhaleCap) + " $MEOW", color: "var(--teal)" },
-            { label: "Faucet Amount",    value: "1,000 $MEOW",                       color: "var(--gold)" },
-            { label: "NFT Threshold",    value: formatMeow(info.nftThreshold) + " $MEOW", color: "var(--purple)" },
+            { label: "Burned Per Transfer", value: `${Number(info.burnFeeBps)}%`,             color: "var(--red)" },
+            { label: "Treasury Fee",        value: `${Number(info.treasuryFeeBps)/100}%`,     color: "var(--amber)" },
+            { label: "Extra Burn",          value: "0.5%",                                  color: "var(--red)" },
+            { label: "Wallet Holding Limit",value: formatMeow(info.antiWhaleCap) + " $MEOW", color: "var(--teal)" },
+            { label: "Free Claim Amount",   value: "1,000 $MEOW",                            color: "var(--gold)" },
+            { label: "NFT Reward Threshold",value: formatMeow(info.nftThreshold) + " $MEOW", color: "var(--purple)" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{
               background: "var(--surface2)", borderRadius: "var(--radius)",
@@ -133,17 +133,17 @@ export default function Dashboard() {
           </div>
           <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 11, color: "var(--muted)" }}>Address</div>
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>Wallet</div>
               <div style={{ fontFamily: "Syne", fontWeight: 600, fontSize: 13 }}>{shortenAddress(address)}</div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "var(--muted)" }}>$MEOW Balance</div>
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>Token Balance</div>
               <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 20, color: "var(--gold)" }}>
                 {formatMeow(user.tokenBalance)}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: "var(--muted)" }}>Ocelot NFTs</div>
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>Collectible NFTs</div>
               <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 20, color: "var(--teal)" }}>
                 {user.nftBalance.toString()}
               </div>
