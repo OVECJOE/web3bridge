@@ -38,8 +38,6 @@ export function useNFTGallery(address?: `0x${string}`) {
   const idsKey = useMemo(() => ids.map((id) => id.toString()).join(","), [ids]);
   const enabled = !!address && ids.length > 0;
 
-  console.log(ids)
-
   const { data: nfts = [], isFetching: isFetchingNFTs } = useQuery<OcelotNFT[]>({
     queryKey: ["nft-gallery", address, idsKey],
     enabled,
@@ -51,10 +49,8 @@ export function useNFTGallery(address?: `0x${string}`) {
         try {
           const uri = await client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "tokenURI", args: [id] })
             .then(res => res as string);
-            console.log(uri);
           const raw = await client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "traits", args: [id] })
             .then(res => res as RawTraits);
-            console.log(raw);
 
           results.push({
             tokenId: Number(id),
@@ -77,7 +73,6 @@ export function useNFTGallery(address?: `0x${string}`) {
         }
       }
 
-      console.log(results);
       return results;
     },
   });
