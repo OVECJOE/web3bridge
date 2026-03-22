@@ -82,7 +82,7 @@ export default function Faucet() {
               <>
                 <div style={{ fontSize: 32 }}>🐆</div>
                 <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 15, color: "var(--teal)", marginTop: 4 }}>
-                  CLAIM NOW
+                  CLAIM
                 </div>
               </>
             ) : (
