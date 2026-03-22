@@ -58,7 +58,7 @@ export const NFT_ABI = [
   { name: "tokenURI",       type: "function", stateMutability: "view", inputs: [{ name: "tokenId", type: "uint256" }], outputs: [{ type: "string" }] },
   { name: "tokensOfOwner",  type: "function", stateMutability: "view", inputs: [{ name: "owner", type: "address" }],  outputs: [{ type: "uint256[]" }] },
   {
-    name: "getTraits",
+    name: "traits",
     type: "function",
     stateMutability: "view",
     inputs: [{ name: "tokenId", type: "uint256" }],

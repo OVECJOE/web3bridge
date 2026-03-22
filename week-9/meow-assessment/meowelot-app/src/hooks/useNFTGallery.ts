@@ -10,9 +10,9 @@ export interface OcelotNFT {
   traits: {
     furPattern: number; eyeColor: number;
     background: number; accessory: number;
-    amount: bigint;     recipient: string;
-    furName: string;    eyeName: string;
-    bgName: string;     accName: string;
+    amount: bigint; recipient: string;
+    furName: string; eyeName: string;
+    bgName: string; accName: string;
   };
 }
 
@@ -38,6 +38,8 @@ export function useNFTGallery(address?: `0x${string}`) {
   const idsKey = useMemo(() => ids.map((id) => id.toString()).join(","), [ids]);
   const enabled = !!address && ids.length > 0;
 
+  console.log(ids)
+
   const { data: nfts = [], isFetching: isFetchingNFTs } = useQuery<OcelotNFT[]>({
     queryKey: ["nft-gallery", address, idsKey],
     enabled,
@@ -47,23 +49,26 @@ export function useNFTGallery(address?: `0x${string}`) {
 
       for (const id of ids) {
         try {
-          const [uri, raw] = await Promise.all([
-            client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "tokenURI", args: [id] }) as Promise<string>,
-            client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "getTraits", args: [id] }) as Promise<RawTraits>,
-          ]);
+          const uri = await client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "tokenURI", args: [id] })
+            .then(res => res as string);
+            console.log(uri);
+          const raw = await client.readContract({ address: NFT_ADDRESS, abi: NFT_ABI, functionName: "traits", args: [id] })
+            .then(res => res as RawTraits);
+            console.log(raw);
+
           results.push({
             tokenId: Number(id),
             tokenURI: uri,
             traits: {
               furPattern: Number(raw.furPattern),
-              eyeColor:   Number(raw.eyeColor),
+              eyeColor: Number(raw.eyeColor),
               background: Number(raw.background),
-              accessory:  Number(raw.accessory),
-              amount:     raw.amount as bigint,
-              recipient:  raw.recipient as string,
+              accessory: Number(raw.accessory),
+              amount: raw.amount as bigint,
+              recipient: raw.recipient as string,
               furName: FUR_NAMES[Number(raw.furPattern)] ?? "",
-              eyeName: EYE_NAMES[Number(raw.eyeColor)]  ?? "",
-              bgName:  BG_NAMES[Number(raw.background)] ?? "",
+              eyeName: EYE_NAMES[Number(raw.eyeColor)] ?? "",
+              bgName: BG_NAMES[Number(raw.background)] ?? "",
               accName: ACC_NAMES[Number(raw.accessory)] ?? "",
             },
           });
@@ -72,6 +77,7 @@ export function useNFTGallery(address?: `0x${string}`) {
         }
       }
 
+      console.log(results);
       return results;
     },
   });
