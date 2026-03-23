@@ -20,6 +20,8 @@ export const liskSepolia = {
 } as const;
 
 export const TOKEN_ABI = parseAbi([
+  "event NFTMintSucceeded(address indexed sender, uint256 indexed tokenId, uint256 amount)",
+  "event NFTMintFailed(address indexed sender, uint256 amount, string reason)",
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",

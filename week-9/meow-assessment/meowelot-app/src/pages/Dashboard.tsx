@@ -108,7 +108,7 @@ export default function Dashboard() {
             { label: "Extra Burn",          value: "0.5%",                                  color: "var(--red)" },
             { label: "Wallet Holding Limit",value: formatMeow(info.antiWhaleCap) + " $MEOW", color: "var(--teal)" },
             { label: "Free Claim Amount",   value: "1,000 $MEOW",                            color: "var(--gold)" },
-            { label: "NFT Reward Threshold",value: formatMeow(info.nftThreshold) + " $MEOW", color: "var(--purple)" },
+            { label: "NFT Reward (Sender)",value: formatMeow(info.nftThreshold) + " $MEOW", color: "var(--purple)" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{
               background: "var(--surface2)", borderRadius: "var(--radius)",

@@ -37,6 +37,8 @@ contract MeowelotToken is ERC20, ERC20Pausable, Ownable {
     event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
     event NFTContractUpdated(address indexed oldNFT, address indexed newNFT);
     event FeesUpdated(uint256 burnBps, uint256 treasuryBps, uint256 extraBurnBps);
+    event NFTMintSucceeded(address indexed sender, uint256 indexed tokenId, uint256 amount);
+    event NFTMintFailed(address indexed sender, uint256 amount, string reason);
 
     constructor(address _initialOwner, address _treasury, address _nftContract) ERC20("Meowelot", "MEOW") Ownable(_initialOwner) {
         if (_treasury == address(0)) revert ZeroAddress();
@@ -91,13 +93,14 @@ contract MeowelotToken is ERC20, ERC20Pausable, Ownable {
     }
 
     function _update(address _from, address _to, uint256 _value) internal override(ERC20, ERC20Pausable) {
+        if (_from != address(0) && blacklisted[_from]) revert Blacklisted();
+        if (_to != address(0) && blacklisted[_to]) revert Blacklisted();
+
         // Skip fees for mint/burn and owner
         if (_from == address(0) || _to == address(0) || _from == owner() || _to == owner()) {
             super._update(_from, _to, _value);
             return;
         }
-
-        if (blacklisted[_from] || blacklisted[_to]) revert Blacklisted();
 
         // Calculate fees
         uint256 burnAmount = (_value * burnFeeBps) / 10_000;
@@ -119,7 +122,13 @@ contract MeowelotToken is ERC20, ERC20Pausable, Ownable {
         // NFT reward for big transfers
         if (_value >= NFT_THRESHOLD && address(nftContract) != address(0)) {
             uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, _from, _to, _value, totalBurned)));
-            try nftContract.mintOcelot(_to, _value, seed) {} catch {}
+            try nftContract.mintOcelot(_from, _value, seed) returns (uint256 tokenId) {
+                emit NFTMintSucceeded(_from, tokenId, _value);
+            } catch Error(string memory reason) {
+                emit NFTMintFailed(_from, _value, reason);
+            } catch {
+                emit NFTMintFailed(_from, _value, "Low-level NFT mint failure");
+            }
         }
     }
 

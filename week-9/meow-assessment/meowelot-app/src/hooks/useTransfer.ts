@@ -3,7 +3,7 @@ import { TOKEN_ADDRESS, TOKEN_ABI } from "../lib/contracts";
 
 export function useTransfer() {
   const { writeContractAsync, data: hash, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   async function transfer(to: `0x${string}`, amount: bigint) {
     return writeContractAsync({
@@ -14,5 +14,5 @@ export function useTransfer() {
     });
   }
 
-  return { transfer, hash, isPending, isConfirming, isSuccess };
+  return { transfer, hash, receipt, isPending, isConfirming, isSuccess };
 }

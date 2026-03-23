@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
-import { formatUnits, isAddress } from "viem";
+import { decodeEventLog, formatUnits, isAddress } from "viem";
 import { useTransfer } from "../hooks/useTransfer";
 import { useUserBalance } from "../hooks/useUserBalance";
 import { useTokenInfo } from "../hooks/useTokenInfo";
 import { extractErrorMessage, formatMeow, parseTokenAmount } from "../lib/utils";
 import TxButton from "../components/TxButton";
 import InputField from "../components/InputField";
-import { EXPLORER_URL } from "../lib/contracts";
+import { EXPLORER_URL, TOKEN_ABI } from "../lib/contracts";
 import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
 export default function Transfer() {
   const { address, isConnected } = useAccount();
-  const { transfer, hash, isPending, isConfirming, isSuccess } = useTransfer();
+  const { transfer, hash, receipt, isPending, isConfirming, isSuccess } = useTransfer();
   const { tokenBalance, refetch } = useUserBalance(address);
   const { nftThreshold } = useTokenInfo();
   const isMobile = useIsMobile();
@@ -23,13 +23,40 @@ export default function Transfer() {
   const [toErr, setToErr]   = useState("");
   const [amtErr, setAmtErr] = useState("");
 
+  const parsedAmt = parseTokenAmount(amount);
+  const senderGetsNFT = nftThreshold > 0n && parsedAmt >= nftThreshold;
+
   useEffect(() => {
     if (isSuccess) {
-      toast.success("Transfer successful!");
+      let nftMintFailedReason = "";
+      let nftMinted = false;
+
+      for (const log of receipt?.logs ?? []) {
+        try {
+          const decoded = decodeEventLog({ abi: TOKEN_ABI, data: log.data, topics: log.topics });
+          if (decoded.eventName === "NFTMintSucceeded") {
+            nftMinted = true;
+          }
+          if (decoded.eventName === "NFTMintFailed") {
+            nftMintFailedReason = String((decoded.args as { reason?: string }).reason ?? "Unknown reason");
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      if (nftMintFailedReason) {
+        toast.error(`Transfer completed, but collectible mint failed: ${nftMintFailedReason}`);
+      } else if (senderGetsNFT && nftMinted) {
+        toast.success("Transfer successful! Collectible minted to your wallet.");
+      } else {
+        toast.success("Transfer successful!");
+      }
+
       setTo(""); setAmount("");
       refetch();
     }
-  }, [isSuccess, refetch]);
+  }, [isSuccess, receipt, refetch, senderGetsNFT]);
 
   function validate() {
     let ok = true;
@@ -51,9 +78,6 @@ export default function Transfer() {
     }
   }
 
-  const parsedAmt = parseTokenAmount(amount);
-  const willGetNFT = nftThreshold > 0n && parsedAmt >= nftThreshold;
-
   // Fee preview
   const burnAmt     = parsedAmt * 100n / 10000n;
   const treasuryAmt = parsedAmt * 50n  / 10000n;
@@ -64,7 +88,7 @@ export default function Transfer() {
     <div className="animate-fade-in" style={{ maxWidth: 520, margin: "0 auto" }}>
       <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: isMobile ? 26 : 32, marginBottom: 6 }}>Send Tokens</div>
       <div style={{ color: "var(--muted)", marginBottom: 32 }}>
-        Send $MEOW to another wallet. Large transfers unlock a bonus NFT for the receiver.
+        Send $MEOW to another wallet. Large transfers unlock a bonus NFT for you (the sender).
       </div>
 
       <div style={{
@@ -142,7 +166,7 @@ export default function Transfer() {
         )}
 
         {/* NFT badge */}
-        {willGetNFT && (
+        {senderGetsNFT && (
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
             padding: "10px 14px", marginBottom: 20,
@@ -150,7 +174,7 @@ export default function Transfer() {
             borderRadius: "var(--radius)", fontSize: 12, color: "var(--purple)",
           }}>
             <span style={{ fontSize: 20 }}>🐆</span>
-            <span><strong>Bonus unlocked.</strong> This transfer will mint a collectible NFT for the receiver.</span>
+            <span><strong>Bonus unlocked.</strong> This transfer will mint a collectible NFT to your wallet.</span>
           </div>
         )}
 

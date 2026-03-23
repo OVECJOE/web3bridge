@@ -5,6 +5,12 @@ import {Test, console} from "forge-std/Test.sol";
 import {MeowelotToken} from "../src/MeowelotToken.sol";
 import {MeowelotNFT} from "../src/MeowelotNFT.sol";
 
+contract RevertingNFT {
+    function mintOcelot(address, uint256, uint256) external pure returns (uint256) {
+        revert("mock mint failure");
+    }
+}
+
 contract MeowelotTokenTest is Test {
     MeowelotToken public token;
     MeowelotNFT   public nft;
@@ -29,7 +35,6 @@ contract MeowelotTokenTest is Test {
         vm.stopPrank();
     }
 
-    // ─── Basic deployment checks ─────────────────────────────────────────────
     function test_InitialState() public view {
         assertEq(token.name(), "Meowelot");
         assertEq(token.symbol(), "MEOW");
@@ -40,7 +45,6 @@ contract MeowelotTokenTest is Test {
         assertEq(address(token.nftContract()), address(nft));
     }
 
-    // ─── requestToken ─────────────────────────────────────────────────────────
     function test_RequestToken_Success() public {
         vm.prank(alice);
         token.requestToken();
@@ -158,7 +162,27 @@ contract MeowelotTokenTest is Test {
         token.requestToken();
     }
 
-    // ─── mint ─────────────────────────────────────────────────────────────────
+    function test_Blacklisted_CannotReceiveFromOwner() public {
+        vm.prank(owner);
+        token.setBlacklist(alice, true);
+
+        vm.prank(owner);
+        vm.expectRevert(MeowelotToken.Blacklisted.selector);
+        token.transfer(alice, 1_000 * 1e18);
+    }
+
+    function test_Blacklisted_CannotSendToOwner() public {
+        vm.prank(owner);
+        token.transfer(alice, 5_000 * 1e18);
+
+        vm.prank(owner);
+        token.setBlacklist(alice, true);
+
+        vm.prank(alice);
+        vm.expectRevert(MeowelotToken.Blacklisted.selector);
+        token.transfer(owner, 100 * 1e18);
+    }
+
     function test_Mint_OwnerCanMint() public {
         uint256 amount = 100_000 * 1e18;
         vm.prank(owner);
@@ -209,7 +233,6 @@ contract MeowelotTokenTest is Test {
         token.mint(alice, 1000 * 1e18);
     }
 
-    // ─── Transfer fees ────────────────────────────────────────────────────────
     function test_Transfer_FeesApplied() public {
         uint256 amount = 10_000 * 1e18;
         vm.prank(owner);
@@ -260,17 +283,44 @@ contract MeowelotTokenTest is Test {
         token.transfer(bob, 1_000 * 1e18);
     }
 
-    // ─── NFT minting on large transfers ──────────────────────────────────────
     function test_Transfer_MintsNFTAboveThreshold() public {
         vm.prank(owner);
         token.transfer(alice, 50_000 * 1e18);
 
-        uint256 nftsBefore = nft.balanceOf(bob);
+        uint256 nftsBeforeSender = nft.balanceOf(alice);
+        uint256 nftsBeforeReceiver = nft.balanceOf(bob);
+
+        vm.expectEmit(true, false, false, true);
+        emit MeowelotToken.NFTMintSucceeded(alice, 1, NFT_THRESHOLD + 1 * 1e18);
 
         vm.prank(alice);
         token.transfer(bob, NFT_THRESHOLD + 1 * 1e18);
 
-        assertEq(nft.balanceOf(bob), nftsBefore + 1);
+        assertEq(nft.balanceOf(alice), nftsBeforeSender + 1);
+        assertEq(nft.balanceOf(bob), nftsBeforeReceiver);
+    }
+
+    function test_Transfer_NFTMintFailure_EmitsEvent_StillSucceeds() public {
+        vm.prank(owner);
+        token.transfer(alice, 50_000 * 1e18);
+
+        // Point to a contract that reverts on mint so token emits failure event.
+        RevertingNFT badNft = new RevertingNFT();
+        vm.prank(owner);
+        token.setNFTContract(address(badNft));
+
+        uint256 senderBefore = token.balanceOf(alice);
+        uint256 receiverBefore = token.balanceOf(bob);
+
+        vm.expectEmit(true, false, false, true);
+        emit MeowelotToken.NFTMintFailed(alice, NFT_THRESHOLD + 1 * 1e18, "mock mint failure");
+
+        vm.prank(alice);
+        token.transfer(bob, NFT_THRESHOLD + 1 * 1e18);
+
+        // Transfer should still succeed.
+        assertLt(token.balanceOf(alice), senderBefore);
+        assertGt(token.balanceOf(bob), receiverBefore);
     }
 
     function test_Transfer_NoNFTBelowThreshold() public {
@@ -283,7 +333,6 @@ contract MeowelotTokenTest is Test {
         assertEq(nft.balanceOf(bob), 0);
     }
 
-    // ─── totalBurned tracking ─────────────────────────────────────────────────
     function test_TotalBurnedIncrementsOnTransfer() public {
         uint256 amount = 5_000 * 1e18;
         vm.prank(owner);
@@ -298,7 +347,6 @@ contract MeowelotTokenTest is Test {
         assertEq(token.totalBurned(), burnedBefore + expectedBurn);
     }
 
-    // ─── Admin functions ──────────────────────────────────────────────────────
     function test_SetTreasury() public {
         address newTreasury = address(0x99);
         vm.prank(owner);

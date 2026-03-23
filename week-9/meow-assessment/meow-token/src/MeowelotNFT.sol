@@ -72,12 +72,11 @@ contract MeowelotNFT is ERC721, Ownable {
         return tokenId;
     }
 
-    function transferFrom(address, address, uint256) public pure override {
-        revert Soulbound();
-    }
-
-    function safeTransferFrom(address, address, uint256, bytes memory) public pure override {
-        revert Soulbound();
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+        address from = _ownerOf(tokenId);
+        // Soulbound: allow mint (from == 0) and burn (to == 0), block transfers.
+        if (from != address(0) && to != address(0)) revert Soulbound();
+        return super._update(to, tokenId, auth);
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
