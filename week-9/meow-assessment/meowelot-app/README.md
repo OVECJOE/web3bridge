@@ -5,18 +5,30 @@ React + TypeScript frontend for the $MEOW token on Lisk Sepolia.
 ## Setup
 
 ```bash
-npm install
-cp .env.example .env
-# Fill in your deployed contract addresses
-npm start
+bun install
+# Fill in .env with your deployed addresses and WalletConnect project id
+bun run dev
 ```
+
+Required environment variables:
+
+```env
+VITE_TOKEN_ADDRESS=0x...
+VITE_NFT_ADDRESS=0x...
+VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_cloud_project_id
+VITE_APP_URL=https://your-production-domain.com
+VITE_APP_ICON=https://your-production-domain.com/icon.png
+```
+
+Create a WalletConnect Cloud project id at https://cloud.walletconnect.com.
+Without this value, many mobile wallets will not appear in the connect modal.
 
 ## Deploy (Vercel)
 
 ```bash
-npm run build
+bun run build
 # Push to GitHub, import repo in Vercel
-# Set REACT_APP_TOKEN_ADDRESS and REACT_APP_NFT_ADDRESS as env vars
+# Set VITE_TOKEN_ADDRESS, VITE_NFT_ADDRESS, and VITE_WALLETCONNECT_PROJECT_ID env vars
 ```
 
 ## Architecture
