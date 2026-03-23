@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 import { decodeEventLog, formatUnits, isAddress } from "viem";
 import { useTransfer } from "../hooks/useTransfer";
@@ -7,7 +7,7 @@ import { useTokenInfo } from "../hooks/useTokenInfo";
 import { extractErrorMessage, formatMeow, parseTokenAmount } from "../lib/utils";
 import TxButton from "../components/TxButton";
 import InputField from "../components/InputField";
-import { EXPLORER_URL, TOKEN_ABI } from "../lib/contracts";
+import { EXPLORER_URL, TOKEN_ABI, TOKEN_ADDRESS } from "../lib/contracts";
 import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
@@ -22,41 +22,51 @@ export default function Transfer() {
   const [amount, setAmount] = useState("");
   const [toErr, setToErr]   = useState("");
   const [amtErr, setAmtErr] = useState("");
+  const handledHashRef = useRef<`0x${string}` | null>(null);
+  const submittedAmountRef = useRef<bigint>(0n);
 
   const parsedAmt = parseTokenAmount(amount);
   const senderGetsNFT = nftThreshold > 0n && parsedAmt >= nftThreshold;
 
   useEffect(() => {
-    if (isSuccess) {
-      let nftMintFailedReason = "";
-      let nftMinted = false;
+    if (!isSuccess || !hash || !receipt) return;
+    if (handledHashRef.current === hash) return;
+    handledHashRef.current = hash;
 
-      for (const log of receipt?.logs ?? []) {
-        try {
-          const decoded = decodeEventLog({ abi: TOKEN_ABI, data: log.data, topics: log.topics });
-          if (decoded.eventName === "NFTMintSucceeded") {
-            nftMinted = true;
-          }
-          if (decoded.eventName === "NFTMintFailed") {
-            nftMintFailedReason = String((decoded.args as { reason?: string }).reason ?? "Unknown reason");
-          }
-        } catch {
-          continue;
+    const expectedNftMint = nftThreshold > 0n && submittedAmountRef.current >= nftThreshold;
+    let nftMintFailedReason = "";
+    let nftMinted = false;
+
+    for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== TOKEN_ADDRESS.toLowerCase()) continue;
+
+      try {
+        const decoded = decodeEventLog({ abi: TOKEN_ABI, data: log.data, topics: log.topics });
+        if (decoded.eventName === "NFTMintSucceeded") {
+          nftMinted = true;
         }
+        if (decoded.eventName === "NFTMintFailed") {
+          nftMintFailedReason = String((decoded.args as { reason?: string }).reason ?? "Unknown reason");
+        }
+      } catch {
+        continue;
       }
-
-      if (nftMintFailedReason) {
-        toast.error(`Transfer completed, but collectible mint failed: ${nftMintFailedReason}`);
-      } else if (senderGetsNFT && nftMinted) {
-        toast.success("Transfer successful! Collectible minted to your wallet.");
-      } else {
-        toast.success("Transfer successful!");
-      }
-
-      setTo(""); setAmount("");
-      refetch();
     }
-  }, [isSuccess, receipt, refetch, senderGetsNFT]);
+
+    if (nftMintFailedReason) {
+      toast.error(`Transfer completed, but collectible mint failed: ${nftMintFailedReason}`);
+    } else if (nftMinted) {
+      toast.success("Transfer successful! Collectible minted to your wallet.");
+    } else if (expectedNftMint) {
+      toast("Transfer successful, but no collectible mint event was emitted.", { icon: "⚠️" });
+    } else {
+      toast.success("Transfer successful!");
+    }
+
+    setTo("");
+    setAmount("");
+    refetch();
+  }, [isSuccess, hash, receipt, refetch, nftThreshold]);
 
   function validate() {
     let ok = true;
@@ -71,7 +81,8 @@ export default function Transfer() {
   async function handleTransfer() {
     if (!validate()) return;
     try {
-      await transfer(to as `0x${string}`, parseTokenAmount(amount));
+      submittedAmountRef.current = parseTokenAmount(amount);
+      await transfer(to as `0x${string}`, submittedAmountRef.current);
     } catch (e: unknown) {
       const msg = extractErrorMessage(e);
       toast.error(msg.length > 80 ? msg.slice(0, 80) + "…" : msg);
