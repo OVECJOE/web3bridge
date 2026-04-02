@@ -1,5 +1,5 @@
 import { useReadContracts } from "wagmi";
-import { TOKEN_ADDRESS, TOKEN_ABI } from "../lib/contracts";
+import { TOKEN_ADDRESS, TOKEN_ABI, NFT_ADDRESS, NFT_ABI } from "../lib/contracts";
 
 export function useTokenInfo() {
   const { data, isLoading, refetch } = useReadContracts({
@@ -14,6 +14,7 @@ export function useTokenInfo() {
       { address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: "paused" },
       { address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: "ANTI_WHALE_CAP" },
       { address: TOKEN_ADDRESS, abi: TOKEN_ABI, functionName: "NFT_THRESHOLD" },
+      { address: NFT_ADDRESS,   abi: NFT_ABI,   functionName: "totalSupply" },
     ],
   });
 
@@ -28,6 +29,7 @@ export function useTokenInfo() {
     paused:          (data?.[7]?.result as boolean) ?? false,
     antiWhaleCap:    (data?.[8]?.result as bigint) ?? 0n,
     nftThreshold:    (data?.[9]?.result as bigint) ?? 0n,
+    totalNftMinted:  (data?.[10]?.result as bigint) ?? 0n,
     isLoading,
     refetch,
   };

@@ -16,10 +16,16 @@ const NAV = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { address, isConnected } = useAccount();
-  const { tokenBalance, nftBalance } = useUserBalance(address);
+  const { tokenBalance, nftBalance, isOwner } = useUserBalance(address);
   const location = useLocation();
   const isMobile = useIsMobile();
   const [navOpen, setNavOpen] = React.useState(false);
+
+  const navItems = NAV.filter((item) => {
+    if (item.to === "/mint") return isConnected && isOwner;
+    if (item.to === "/gallery") return !isOwner;
+    return true;
+  });
 
   React.useEffect(() => {
     if (!isMobile) setNavOpen(true);
@@ -101,7 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           whiteSpace: isMobile ? "nowrap" : "normal",
           gap: isMobile ? 6 : 0,
         }}>
-          {NAV.map(({ to, label, icon }) => (
+          {navItems.map(({ to, label, icon }) => (
             <NavLink key={to} to={to} end={to === "/"} style={({ isActive }) => ({
               display: "flex", alignItems: "center", gap: isMobile ? 8 : 12,
               padding: isMobile ? "8px 10px" : "10px 12px", borderRadius: "var(--radius)",
@@ -153,7 +159,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           gap: 12,
         }}>
           <div style={{ fontFamily: "Syne", fontWeight: 700, fontSize: isMobile ? 14 : 15, color: "var(--text)" }}>
-            {NAV.find(n => n.to === location.pathname)?.label ?? "Meowelot"}
+            {navItems.find(n => n.to === location.pathname)?.label ?? "Meowelot"}
           </div>
           <ConnectButton
             showBalance={false}

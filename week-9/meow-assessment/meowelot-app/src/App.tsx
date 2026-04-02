@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { useAccount } from "wagmi";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
@@ -13,8 +14,27 @@ import Transfer from "./pages/Transfer";
 import Mint from "./pages/Mint";
 import Gallery from "./pages/Gallery";
 import { useIsMobile } from "./hooks/useIsMobile";
+import { useUserBalance } from "./hooks/useUserBalance";
 
 const queryClient = new QueryClient();
+
+function OwnerOnly({ children }: { children: JSX.Element }) {
+  const { address } = useAccount();
+  const { isOwner, isLoading } = useUserBalance(address);
+
+  if (isLoading) return null;
+  if (!isOwner) return <Navigate to="/" replace />;
+  return children;
+}
+
+function NonOwnerOnly({ children }: { children: JSX.Element }) {
+  const { address } = useAccount();
+  const { isOwner, isLoading } = useUserBalance(address);
+
+  if (isLoading) return null;
+  if (isOwner) return <Navigate to="/" replace />;
+  return children;
+}
 
 export default function App() {
   const isMobile = useIsMobile();
@@ -36,8 +56,8 @@ export default function App() {
                 <Route path="/"         element={<Dashboard />} />
                 <Route path="/faucet"   element={<Faucet />} />
                 <Route path="/transfer" element={<Transfer />} />
-                <Route path="/mint"     element={<Mint />} />
-                <Route path="/gallery"  element={<Gallery />} />
+                <Route path="/mint"     element={<OwnerOnly><Mint /></OwnerOnly>} />
+                <Route path="/gallery"  element={<NonOwnerOnly><Gallery /></NonOwnerOnly>} />
               </Routes>
             </Layout>
           </BrowserRouter>

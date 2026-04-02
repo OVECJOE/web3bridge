@@ -68,6 +68,7 @@ export default function Dashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 24 }}>
         <StatCard label="Tokens Created"          value={formatMeow(info.totalSupply)} sub={`${supplyPct.toFixed(2)}% of maximum`} accent="var(--gold)"   icon="◎" />
         <StatCard label="Tokens Removed"       value={formatMeow(info.totalBurned)} sub={`${burnPct.toFixed(2)}% removed`}      accent="var(--red)"    icon="🔥" />
+        <StatCard label="Collectibles Minted"  value={info.totalNftMinted.toString()} sub="all wallets combined"                accent="var(--teal)"   icon="🐆" />
         <StatCard label="Still Mintable"          value={formatMeow(info.remainingMint)} sub="only app owner can mint"             accent="var(--teal)"   icon="✦" />
         <StatCard label="Maximum Supply Limit"    value={formatMeow(info.maxSupply)}   sub="hard cap"                              accent="var(--purple)"  icon="⬡" />
       </div>
