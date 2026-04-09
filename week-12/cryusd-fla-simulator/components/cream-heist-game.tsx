@@ -94,8 +94,8 @@ const MISSIONS: MissionStep[] = [
   {
     id: 5,
     title: "Drain Liquidity",
-    description: "Rook lift executes repeated borrow extraction.",
-    required: { from: "h1", to: "e1", piece: "r", label: "h1 -> e1 (Rook)" },
+    description: "Stabilize position while automated borrow bursts keep draining reserves.",
+    required: { from: "c2", to: "c3", piece: "p", label: "c2 -> c3 (Pawn)" },
     blackReply: "a4",
     success: "Liquidity extraction started. Market reserve is collapsing.",
   },
@@ -296,6 +296,7 @@ export default function CreamHeistGame() {
   const [panelPos, setPanelPos] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [contentVisible, setContentVisible] = useState(true)
+  const [coachExpanded, setCoachExpanded] = useState(false)
 
   const displayFen = timeline[timelineCursor] ?? fen
   const coach = coachCopy(started, stage)
@@ -350,6 +351,26 @@ export default function CreamHeistGame() {
       turn,
     }
   }, [economy, stage, started, displayFen])
+
+  const coachMath = useMemo(() => {
+    const basePrice = BASE_VAULT_VALUE / SHARES_OUTSTANDING
+    const manipulatedPrice = (BASE_VAULT_VALUE + economy.injection) / SHARES_OUTSTANDING
+    const apparentCollateral = ATTACKER_SHARES * manipulatedPrice
+    const realCollateral = ATTACKER_SHARES * basePrice
+    const phantomGap = apparentCollateral - realCollateral
+    const borrowCap = Math.min(MARKET_LIQUIDITY, apparentCollateral * COLLATERAL_FACTOR)
+    const drainPct = MARKET_LIQUIDITY > 0 ? (economy.drained / MARKET_LIQUIDITY) * 100 : 0
+
+    return {
+      basePrice,
+      manipulatedPrice,
+      apparentCollateral,
+      realCollateral,
+      phantomGap,
+      borrowCap,
+      drainPct,
+    }
+  }, [economy.drained, economy.injection])
 
   const currentMission = started && stage < MISSIONS.length ? MISSIONS[stage] : null
 
@@ -444,6 +465,7 @@ export default function CreamHeistGame() {
     setLastMove(null)
     setEconomy(INITIAL_ECONOMY)
     setStatus(`Stage 1: ${MISSIONS[0].title}. Required move: ${MISSIONS[0].required.label}`)
+    setCoachExpanded(false)
     setLogs([
       { text: "Operation started. Follow mission moves in sequence.", tone: "good" },
       { text: `Objective: ${MISSIONS[0].required.label}`, tone: "neutral" },
@@ -906,13 +928,45 @@ export default function CreamHeistGame() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute bottom-20 left-3 z-20 w-[min(90vw,380px)] md:bottom-5 md:left-5">
-          <div className="rounded-2xl border border-white/30 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl md:p-4">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/85">Tactical Coach</p>
+        <div className="pointer-events-none absolute bottom-20 left-3 z-20 w-[min(90vw,420px)] md:bottom-5 md:left-5">
+          <div className="pointer-events-auto rounded-2xl border border-white/30 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl md:p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/85">Tactical Coach</p>
+              <button
+                type="button"
+                onClick={() => setCoachExpanded((v) => !v)}
+                className="rounded-md border border-white/30 bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-50/90"
+              >
+                {coachExpanded ? "Less" : "More"}
+              </button>
+            </div>
+
             <p className="mt-1 text-sm font-semibold text-white md:text-base">{coach.title}</p>
             <p className="mt-1 text-xs text-cyan-50/90 md:text-sm">{coach.why}</p>
             <p className="mt-2 text-[11px] text-emerald-100/95">Next: {coach.next}</p>
             <p className="mt-1 text-[11px] text-cyan-100/75">Concept: {coach.concept}</p>
+
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                coachExpanded ? "mt-3 max-h-[380px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="rounded-xl border border-white/20 bg-black/20 p-3 text-[11px] text-cyan-50/90">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100/85">Exploit Math</p>
+                <p>P&apos; = (V0 + I) / S</p>
+                <p>C_app = A_shares * P&apos;</p>
+                <p>B = min(L, C_app * CF)</p>
+                <p>Drain% = (D / L) * 100</p>
+
+                <p className="mt-3 text-[10px] uppercase tracking-[0.14em] text-cyan-100/85">Worked Example</p>
+                <p>V0={money(BASE_VAULT_VALUE)}, I={money(economy.injection)}, S={SHARES_OUTSTANDING.toLocaleString()}</p>
+                <p>P&apos;={coachMath.manipulatedPrice.toFixed(2)} and base P={coachMath.basePrice.toFixed(2)}</p>
+                <p>C_app={money(coachMath.apparentCollateral)} vs C_real={money(coachMath.realCollateral)}</p>
+                <p>Phantom gap={money(coachMath.phantomGap)}</p>
+                <p>Borrow cap={money(coachMath.borrowCap)} with CF={COLLATERAL_FACTOR.toFixed(2)}</p>
+                <p>Drained={money(economy.drained)} ({coachMath.drainPct.toFixed(1)}% of {money(MARKET_LIQUIDITY)})</p>
+              </div>
+            </div>
           </div>
         </div>
 
