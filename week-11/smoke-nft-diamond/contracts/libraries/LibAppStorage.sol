@@ -21,9 +21,8 @@ library LibAppStorage {
     }
 
     function _appStorage() internal pure returns (AppStorage storage as_) {
-        bytes32 position = keccak256("diamond.standard.app.storage");
         assembly {
-            as_.slot := position
+            as_.slot := 0
         }
     }
 }
