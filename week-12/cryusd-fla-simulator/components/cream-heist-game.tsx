@@ -17,6 +17,19 @@ type Tone = "neutral" | "good" | "warn"
 type PanelKey = "mission" | "telemetry" | "log" | "control"
 type SnapAnchor = "tl" | "tr" | "bl" | "br"
 type Difficulty = "strict" | "sandbox"
+type CoachProfile = "beginner" | "analyst"
+
+type CoachInfo = {
+  title: string
+  why: string
+  next: string
+  concept: string
+  terms: string
+  mechanism: string
+  brokenInvariant: string
+  onchainSignal: string
+  defense: string
+}
 
 type MissionStep = {
   id: number
@@ -133,75 +146,136 @@ function toneClass(tone: Tone) {
   return "text-cyan-100/95"
 }
 
-function coachCopy(started: boolean, stage: number) {
+function coachCopy(started: boolean, stage: number, profile: CoachProfile): CoachInfo {
   if (!started) {
     return {
       title: "What Is A Flash Loan?",
       why: "A flash loan is uncollateralized capital borrowed and repaid inside one transaction. Attackers chain actions fast before state settles.",
       next: "Press Start Operation, then execute required move highlights.",
       concept: "One-tx borrowed liquidity enables temporary market distortion.",
+      terms: "Flash loan, atomic transaction, temporary buying power",
+      mechanism: "Borrow -> manipulate state -> extract value -> repay, all inside one atomic path.",
+      brokenInvariant: "Healthy systems assume temporary state cannot mint durable borrow capacity.",
+      onchainSignal: "Large same-block borrows and multi-protocol call chains with unusual token routing.",
+      defense: "Real-time risk checks on transient state, borrow caps, and oracle/accounting sanity guards.",
     }
   }
 
   if (stage === 0) {
     return {
       title: "Stage 1: First Liquidity Pulse",
-      why: "The attacker first sources large temporary capital from Maker to create enough force for manipulation.",
+      why:
+        profile === "analyst"
+          ? "First flash source establishes principal that can be recycled across protocols before settlement."
+          : "The attacker first sources large temporary capital from Maker to create enough force for manipulation.",
       next: "Play the highlighted required move.",
       concept: "Temporary capital is the fuel for downstream valuation abuse.",
+      terms: "Flash principal, atomic composability",
+      mechanism: "Acquire large notional without pre-funded collateral by relying on same-tx repayment.",
+      brokenInvariant: "Assumption that borrow size always reflects real long-lived capital.",
+      onchainSignal: "Single transaction starts with debt leg and quickly touches multiple lending/vault contracts.",
+      defense: "Throttle flash exposure per block and enforce dynamic borrow ceilings.",
     }
   }
 
   if (stage === 1) {
     return {
       title: "Stage 2: Stack Flash Sources",
-      why: "Combining Maker and Aave increases total pressure and attack budget.",
+      why:
+        profile === "analyst"
+          ? "Multi-source flash routing increases depth, reducing slippage/constraint risk during manipulation."
+          : "Combining Maker and Aave increases total pressure and attack budget.",
       next: "Execute the next required mission move.",
       concept: "Multi-source flash liquidity compounds manipulation capacity.",
+      terms: "Liquidity stacking, path composability",
+      mechanism: "Aggregate principal from independent pools to increase effective exploit bandwidth.",
+      brokenInvariant: "Risk engines treat each pool in isolation while attacker composes them atomically.",
+      onchainSignal: "Back-to-back flash borrow events from separate pools in one tx trace.",
+      defense: "Cross-protocol anomaly detection and aggregate exposure checks.",
     }
   }
 
   if (stage === 2) {
     return {
       title: "Stage 3: Inflate Vault Value",
-      why: "Capital is injected where accounting can be temporarily distorted, inflating apparent collateral value.",
+      why:
+        profile === "analyst"
+          ? "Donation-style asset injection can raise vault share price when assets increase without proportional share minting."
+          : "Capital is injected where accounting can be temporarily distorted, inflating apparent collateral value.",
       next: "Follow the required move to complete inflation setup.",
       concept: "Book value diverges from real redeemable value.",
+      terms: "Share price inflation, donation attack, accounting oracle",
+      mechanism: "If $P'=\frac{V_0+I}{S}$ rises via injected assets $I$ while shares $S$ stay fixed, collateral app value jumps.",
+      brokenInvariant: "Share price assumed to track organic market value rather than manipulable accounting state.",
+      onchainSignal: "Large vault asset transfer with negligible corresponding share mint/burn activity.",
+      defense: "Use TWAP/lagged valuation, donation-resistant accounting, and mint/burn consistency checks.",
     }
   }
 
   if (stage === 3) {
     return {
       title: "Stage 4: Post Phantom Collateral",
-      why: "The protocol accepts inflated valuation as collateral, granting borrow power that should not exist.",
+      why:
+        profile === "analyst"
+          ? "Collateral engine ingests manipulated share valuation and computes borrow limit from overstated notional."
+          : "The protocol accepts inflated valuation as collateral, granting borrow power that should not exist.",
       next: "Execute the required move to post at Cream.",
       concept: "Risk engine trusts manipulated pricing inputs.",
+      terms: "Collateral factor, borrow limit, phantom equity",
+      mechanism: "Borrow power $B=\min(L,CF\cdot A_{shares}\cdot P')$ inflates as $P'$ is manipulated.",
+      brokenInvariant: "Borrow limits expected to be bounded by economically realizable collateral value.",
+      onchainSignal: "Sudden jump in account liquidity/health with no proportional external market move.",
+      defense: "Collateral haircut caps, rapid-change clamps, and independent oracle cross-checks.",
     }
   }
 
   if (stage === 4) {
     return {
       title: "Stage 5: Drain Liquidity",
-      why: "Borrowing against phantom collateral extracts real assets from the pool.",
+      why:
+        profile === "analyst"
+          ? "Protocol converts synthetic borrow headroom into real token outflows, creating solvency gap."
+          : "Borrowing against phantom collateral extracts real assets from the pool.",
       next: "Complete required move to continue drain sequence.",
       concept: "Fake collateral unlocks real token outflows.",
+      terms: "Liquidity drain, solvency gap, bad debt",
+      mechanism: "Real reserves leave pool while collateral mark remains inflated until repricing/recovery.",
+      brokenInvariant: "Pool assets assumed recoverable against posted collateral under stress.",
+      onchainSignal: "Rapid borrow bursts, reserve utilization spikes, and abrupt available-liquidity collapse.",
+      defense: "Per-block outflow caps, circuit breakers, and dynamic liquidation throttles.",
     }
   }
 
   if (stage === 5) {
     return {
       title: "Stage 6: Exfiltrate",
-      why: "After extraction, funds are routed away quickly to prevent recovery actions.",
+      why:
+        profile === "analyst"
+          ? "Post-drain routing fragments flows and reduces recovery probability before governance response."
+          : "After extraction, funds are routed away quickly to prevent recovery actions.",
       next: "Play final required move to complete exfiltration.",
       concept: "Speed + routing finalizes exploit profit.",
+      terms: "Exfiltration, bridge hop, laundering path",
+      mechanism: "Move assets across venues/chains to increase tracking and intervention latency.",
+      brokenInvariant: "Assumes response time can outpace adversarial routing speed.",
+      onchainSignal: "Immediate transfer fan-out to bridges/mix paths after reserve drain.",
+      defense: "Real-time monitoring hooks, emergency pause triggers, and post-incident tracing workflows.",
     }
   }
 
   return {
     title: "Debrief",
-    why: "You just executed the full exploit chain from temporary liquidity to permanent pool loss.",
+    why:
+      profile === "analyst"
+        ? "Chain complete: temporary accounting distortion translated into durable balance-sheet damage."
+        : "You just executed the full exploit chain from temporary liquidity to permanent pool loss.",
     next: "Replay in Strict or Sandbox to reinforce intuition.",
     concept: "Temporary valuation manipulation can create lasting insolvency.",
+    terms: "Bad debt crystallization, insolvency realization",
+    mechanism: "Phantom collateral gap converts into unrecoverable protocol loss once prices normalize.",
+    brokenInvariant: "Collateral quality and liquidity were overestimated at decision time.",
+    onchainSignal: "Post-event reserve deficit and abnormal liquidation coverage shortfall.",
+    defense: "Defense-in-depth: resilient pricing, accounting hardening, and kill-switch governance latency reduction.",
   }
 }
 
@@ -297,9 +371,10 @@ export default function CreamHeistGame() {
   const [dragging, setDragging] = useState(false)
   const [contentVisible, setContentVisible] = useState(true)
   const [coachExpanded, setCoachExpanded] = useState(false)
+  const [coachProfile, setCoachProfile] = useState<CoachProfile>("analyst")
 
   const displayFen = timeline[timelineCursor] ?? fen
-  const coach = coachCopy(started, stage)
+  const coach = coachCopy(started, stage, coachProfile)
 
   const drawStateRef = useRef<DrawState>({
     fen: displayFen,
@@ -555,7 +630,7 @@ export default function CreamHeistGame() {
       if (missionMatch) {
         setStatus(mission.success)
         addLog(`You played ${attempted.san}. ${mission.success}`, "good")
-        addLog(`Why this works: ${coachCopy(true, stageRef.current).why}`, "neutral")
+        addLog(`Why this works: ${coachCopy(true, stageRef.current, coachProfile).why}`, "neutral")
         setEconomy((prev) => applyMissionEconomy(stageRef.current, prev))
 
         playBlackReply(mission.blackReply)
@@ -577,7 +652,7 @@ export default function CreamHeistGame() {
         playBlackReply(mission.blackReply)
       }
     },
-    [addLog, clearSelection, difficulty, playBlackReply, selectSquare, syncGameSnapshot, timeline, timelineCursor],
+    [addLog, clearSelection, coachProfile, difficulty, playBlackReply, selectSquare, syncGameSnapshot, timeline, timelineCursor],
   )
 
   const getSnapPosition = useCallback((anchor: SnapAnchor, width: number, height: number) => {
@@ -932,13 +1007,37 @@ export default function CreamHeistGame() {
           <div className="pointer-events-auto rounded-2xl border border-white/30 bg-white/10 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_22px_60px_rgba(0,0,0,0.4)] backdrop-blur-2xl md:p-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/85">Tactical Coach</p>
-              <button
-                type="button"
-                onClick={() => setCoachExpanded((v) => !v)}
-                className="rounded-md border border-white/30 bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-50/90"
-              >
-                {coachExpanded ? "Less" : "More"}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCoachProfile("beginner")}
+                  className={`rounded-md border px-2 py-1 text-[10px] uppercase tracking-[0.14em] ${
+                    coachProfile === "beginner"
+                      ? "border-cyan-100/75 bg-cyan-100/85 text-black"
+                      : "border-white/30 bg-white/10 text-cyan-50/90"
+                  }`}
+                >
+                  Beginner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoachProfile("analyst")}
+                  className={`rounded-md border px-2 py-1 text-[10px] uppercase tracking-[0.14em] ${
+                    coachProfile === "analyst"
+                      ? "border-cyan-100/75 bg-cyan-100/85 text-black"
+                      : "border-white/30 bg-white/10 text-cyan-50/90"
+                  }`}
+                >
+                  Analyst
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoachExpanded((v) => !v)}
+                  className="rounded-md border border-white/30 bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-50/90"
+                >
+                  {coachExpanded ? "Less" : "More"}
+                </button>
+              </div>
             </div>
 
             <p className="mt-1 text-sm font-semibold text-white md:text-base">{coach.title}</p>
@@ -952,6 +1051,13 @@ export default function CreamHeistGame() {
               }`}
             >
               <div className="rounded-xl border border-white/20 bg-black/20 p-3 text-[11px] text-cyan-50/90">
+                <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100/85">Protocol Lens</p>
+                <p>Terms: {coach.terms}</p>
+                <p className="mt-1">Mechanism: {coach.mechanism}</p>
+                <p className="mt-1">Broken invariant: {coach.brokenInvariant}</p>
+                <p className="mt-1">On-chain signal: {coach.onchainSignal}</p>
+                <p className="mt-1">Defensive control: {coach.defense}</p>
+
                 <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-cyan-100/85">Exploit Math</p>
                 <p>P&apos; = (V0 + I) / S</p>
                 <p>C_app = A_shares * P&apos;</p>
